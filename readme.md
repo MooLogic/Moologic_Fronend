@@ -3,6 +3,7 @@
 This is the **Next.js frontend** for the MooLogic Dairy Farm Tracker, a digital platform designed to streamline dairy farm management by tracking milk production, cattle health, financial records, and more.
 
 ## 🚀 Features
+
 - Authentication & Role-Based Access (Farm Owner, Worker, Government Official)
 - Milk Production Tracking & Analytics
 - Cattle Health Monitoring
