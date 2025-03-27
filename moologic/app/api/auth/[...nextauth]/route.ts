@@ -38,6 +38,7 @@ export const authOptions = {
             role: data.user.role,
             farm: data.user.farm,
             accessToken: data.access_token,  // Store access_token here
+            refreshToken: data.refresh_token,
           };
         }
 
@@ -62,6 +63,7 @@ export const authOptions = {
         token.farm = user.farm;
         token.name = user.name;
         token.accessToken = user.accessToken; // Store the access token here
+        token
       }
       return token;
     },
@@ -73,6 +75,8 @@ export const authOptions = {
         session.user.role = token.role;
         session.user.farm = token.farm;
         session.user.accessToken = token.accessToken; // Pass accessToken to the session
+        session.user.refreshToken = token.refreshToken;
+        
       }
       return session;
     },

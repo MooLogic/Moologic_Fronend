@@ -1,6 +1,7 @@
 import axios from "axios"
 
 const API_BASE_URL = "http://127.0.0.1:8000/core/"
+const API_AUTH_URL = "http://http://127.0.0.1:8000/auth/"
 
 // Create axios instance with base configuration
 const apiClient = axios.create({
@@ -14,6 +15,7 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("accessToken")
+    console.log(token)
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -35,7 +37,7 @@ apiClient.interceptors.response.use(
       try {
         // Try to refresh the token
         const refreshToken = localStorage.getItem("refreshToken")
-        const response = await axios.post(`${API_BASE_URL}/auth/refresh-token/`, {
+        const response = await axios.post(`${API_AUTH_URL}/refresh-token/`, {
           refresh_token: refreshToken,
         })
 
