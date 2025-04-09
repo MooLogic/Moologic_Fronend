@@ -18,6 +18,7 @@ export function RoleSelection() {
   const handleRoleSelection = async (role: string) => {
     setIsLoading(true)
     const token = session?.user.accessToken // Access token fetched from the extended session type
+    const user_id = session?.user.id
     console.log(  token)
     if (!token) {
       toast({
@@ -36,7 +37,7 @@ export function RoleSelection() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`, // Include the token here
         },
-        body: JSON.stringify({ role }),
+        body: JSON.stringify({ role, user_id }), 
       })
       console.log(response) 
       if (!response.ok) {
@@ -44,6 +45,7 @@ export function RoleSelection() {
       }
   
       // Further processing...
+      router.push("/dashboard")
     } catch (error) {
       console.error("Role selection error:", error)
       toast({
