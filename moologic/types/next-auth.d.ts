@@ -10,8 +10,13 @@ declare module "next-auth" {
         name: string
         location: string
       }
+      accessToken?: string
+      name?: string | null
+      email?: string | null
+      image?: string | null
     } & DefaultSession["user"]
   }
+
 
   interface User {
     id: string
