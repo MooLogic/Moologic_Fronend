@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { signIn, signOut, useSession } from "next-auth/react"
 
@@ -30,7 +30,6 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Demo users for quick login
 const demoUsers = {
   owner: {
     email: "demo.owner@example.com",
@@ -51,19 +50,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
   const { data: session, status } = useSession()
 
-  // Convert session user to our User type
   const user: User | null = session?.user
     ? {
         id: session.user.id || "",
         name: session.user.name || "",
         email: session.user.email || "",
         role: (session.user.role as "owner" | "worker" | "government" | "user") || "user",
-        image: session.user.image,
+        image: session.user.image ?? undefined,
         farm: session.user.farm,
       }
     : null
 
-  // Login function
+  const isLoading = status === "loading"
+
+  // Redirection logic centralized here
+  useEffect(() => {
+    if (isLoading) return
+
+    if (!user) {
+      router.push("/landing")
+    } else if (!user.role) {
+      router.push("/auth/role-selection")
+    } else if (!user.farm && user.role !== "government") {
+      router.push("/auth/create-farm")
+    } else if (user.role === "government" && user.farm) {
+      router.push("/government/dashboard")
+    }
+  }, [user, isLoading, router])
+
   const login = async (email: string, password: string): Promise<boolean> => {
     setError(null)
     try {
@@ -85,7 +99,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Demo login function
   const loginWithDemo = async (role: "owner" | "worker" | "government"): Promise<boolean> => {
     setError(null)
     try {
@@ -108,7 +121,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Logout function
   const logout = async () => {
     try {
       await signOut({ redirect: false })
@@ -123,7 +135,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const updateUser = (userData: Partial<User>) => {
-    // This is a no-op since we're using NextAuth session
     console.log("User update requested:", userData)
   }
 
@@ -134,7 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         loginWithDemo,
         logout,
-        isLoading: status === "loading",
+        isLoading,
         error,
         clearError,
         updateUser,
@@ -152,4 +163,3 @@ export function useAuth() {
   }
   return context
 }
-

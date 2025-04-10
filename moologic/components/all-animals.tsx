@@ -172,7 +172,7 @@ export function AllAnimals({ animals, showFilters = true }: AllAnimalsProps) {
           </TableBody>
         </Table>
       </div>
-    </div>
+    </div> 
   )
 }
 

@@ -101,10 +101,10 @@ export const alertApi = {
 
 // Farm API
 export const farmApi = {
-  createFarm: (data: any) => apiClient.post("/farm/", data),
-  getFarm: (id: string) => apiClient.get(`/farm/${id}/`),
-  updateFarm: (id: string, data: any) => apiClient.put(`/farm/${id}/`, data),
-  deleteFarm: (id: string) => apiClient.delete(`/farm/${id}/`),
+  createFarm: (data: any) => apiClient.post("core/farm/", data),
+  getFarm: (id: string) => apiClient.get(`core/farm/${id}/`),
+  updateFarm: (id: string, data: any) => apiClient.put(`core/farm/${id}/`, data),
+  deleteFarm: (id: string) => apiClient.delete(`core/farm/${id}/`),
 }
 
 export default {

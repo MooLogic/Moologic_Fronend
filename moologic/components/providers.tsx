@@ -6,15 +6,17 @@ import { AuthProvider } from "@/contexts/auth-context";
 import { ReduxProviderWrapper } from "@/redux/provider-wrapper";
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "@/components/ui/toaster";
-
+import FarmProtectedRoute from "@/components/farm-route-protection"; 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
       <ReduxProviderWrapper>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider defaultTheme="light">
           <LanguageProvider>
             <AuthProvider>
+              
               {children}
+              
               <Toaster />
             </AuthProvider>
           </LanguageProvider>

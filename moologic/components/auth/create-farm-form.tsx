@@ -49,11 +49,11 @@ export function CreateFarmForm() {
 
     try {
       // Create farm API call
-      const response = await fetch("http://127.0.0.1:8000/farm/", {
+      const response = await fetch("http://127.0.0.1:8000/core/farm/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.accessToken}`,
+          Authorization: `Bearer ${session?.accessToken || ""}`,
         },
         body: JSON.stringify(values),
       })
