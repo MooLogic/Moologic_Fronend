@@ -55,27 +55,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: session.user.id || "",
         name: session.user.name || "",
         email: session.user.email || "",
-        role: (session.user.role as "owner" | "worker" | "government" | "user") || "user",
+        role: (session.user.role as "owner" | "worker" | "government" | "user") || "",
         image: session.user.image ?? undefined,
         farm: session.user.farm,
       }
     : null
 
   const isLoading = status === "loading"
-
+  console.log("AuthProvider session:", user?.role)
   // Redirection logic centralized here
+
+  const getEffectiveRole = (): User["role"] | null => {
+    if (session?.user?.role) {
+      localStorage.removeItem("userRole") // clean up
+      return session.user.role as User["role"]
+    }
+
+    const storedRole = localStorage.getItem("userRole") as User["role"] | null
+    return storedRole
+  }
+
+  const getEffectiveFarm = (): User["farm"] | null => {
+    if (session?.user?.farm) {
+      localStorage.removeItem("farm_name") // clean up
+      return session.user.farm as User["farm"]
+    }
+    const storedFarm = localStorage.getItem("farm_name") as User["farm"] | null
+    return storedFarm
+  }
+
+  const Farm = getEffectiveFarm()
+
+  const role = getEffectiveRole()
+  console.log("Effective role:", role)
   useEffect(() => {
     if (isLoading) return
 
     if (!user) {
       router.push("/landing")
-    } else if (!user.role) {
+    } else if (!role) {
       router.push("/auth/role-selection")
-    } else if (!user.farm && user.role !== "government") {
+    } else if (role && role === "owner" && !Farm ) {
       router.push("/auth/create-farm")
-    } else if (user.role === "government" && user.farm) {
+    } else if (role === "government") {
       router.push("/government/dashboard")
+    } else if (role === "worker") {
+      router.push("/auth/join-farm")
     }
+
   }, [user, isLoading, router])
 
   const login = async (email: string, password: string): Promise<boolean> => {

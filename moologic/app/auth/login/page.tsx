@@ -10,7 +10,7 @@ export default function LoginPage() {
   const { user, isLoading } = useAuth()
   const router = useRouter()
 
-  useEffect(() => {
+  useEffect(() => {     
     if (!isLoading && user) {
       if (user.role === "government") {
         router.push("/government/dashboard")

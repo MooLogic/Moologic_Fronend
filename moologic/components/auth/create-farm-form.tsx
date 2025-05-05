@@ -19,8 +19,6 @@ const formSchema = z.object({
   name: z.string().min(3, { message: "Farm name must be at least 3 characters" }),
   location: z.string().min(3, { message: "Location must be at least 3 characters" }),
   contact: z.string().min(5, { message: "Contact information must be at least 5 characters" }),
-  farm_type: z.string().min(1, { message: "Please select a farm type" }),
-  size: z.coerce.number().positive({ message: "Size must be a positive number" }),
   cattle_count: z.coerce.number().int().positive({ message: "Cattle count must be a positive integer" }),
   description: z.string().optional(),
 })
@@ -29,16 +27,16 @@ export function CreateFarmForm() {
   const router = useRouter()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
-  const { data: session } = useSession()
-
+  // const { data: session } = useSession()
+  const { data: session, update } = useSession()
+  // console.log("Session data:", session)
+  const token = session?.user.accessToken || ""
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
       location: "",
       contact: "",
-      farm_type: "",
-      size: 0,
       cattle_count: 0,
       description: "",
     },
@@ -46,29 +44,34 @@ export function CreateFarmForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true)
-
+  
     try {
-      // Create farm API call
-      const response = await fetch("http://127.0.0.1:8000/core/farm/", {
+      const response = await fetch("http://127.0.0.1:8000/core/create-farm/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.accessToken || ""}`,
+          Authorization: `Bearer ${token || ""}`,
         },
         body: JSON.stringify(values),
       })
-
+  
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || "Failed to create farm")
       }
-
+  
+      const data = await response.json()
+      console.log("Farm created successfully:", data)
+      // ✅ Update the session in NextAuth
+      localStorage.setItem("farm_name", values.name)
+      
       toast({
         title: "Farm created successfully",
         description: "You can now start managing your dairy farm",
       })
+      router.refresh(); // if using app router
 
-      // Redirect to dashboard
+  
       router.push("/dashboard")
     } catch (error: any) {
       console.error("Farm creation error:", error)
@@ -81,6 +84,7 @@ export function CreateFarmForm() {
       setIsLoading(false)
     }
   }
+  
 
   return (
     <div className="flex justify-center items-center min-h-screen p-4">
@@ -127,41 +131,6 @@ export function CreateFarmForm() {
                       <FormLabel>Contact Information</FormLabel>
                       <FormControl>
                         <Input placeholder="+254 123 456 789" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="farm_type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Farm Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select farm type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="dairy">Dairy Farm</SelectItem>
-                          <SelectItem value="mixed">Mixed Farm</SelectItem>
-                          <SelectItem value="beef">Beef Farm</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="size"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Farm Size (acres)</FormLabel>
-                      <FormControl>
-                        <Input type="number" min="0" step="0.1" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
