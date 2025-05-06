@@ -12,7 +12,7 @@ type User = {
   image?: string
   farm?: {
     id: string
-    name: string
+    name: string 
     location: string
   }
 }
@@ -88,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const role = getEffectiveRole()
   console.log("Effective role:", role)
+
   useEffect(() => {
     if (isLoading) return
 

@@ -58,8 +58,16 @@ export function RoleSelection() {
         title: "Role updated",
         description: "Your role has been set successfully.",
       });
-  
-      router.push("/dashboard");
+      if (role === "owner")  {
+        router.push("/auth/create-farm");       
+      }else if (role === "worker") {
+        router.push("/auth/join-farm");
+      }else if (role === "government") {
+        router.push("/government/dashboard");
+      }else{
+        router.push("/auth/role-selection");
+      }
+      
     } catch (error) {
       console.error("Role selection error:", error);
       toast({

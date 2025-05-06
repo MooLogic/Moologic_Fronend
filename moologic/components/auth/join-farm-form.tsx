@@ -15,7 +15,7 @@ import { useSession } from "next-auth/react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const formSchema = z.object({
-  farm_code: z.string().min(6, { message: "Farm code must be at least 6 characters" }),
+  farm_code: z.string().min(1, { message: "Farm code must be at least 6 characters" }),
   role: z.string().min(1, { message: "Please select your role" }),
 })
 
@@ -24,7 +24,7 @@ export function JoinFarmForm() {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const { data: session } = useSession()
-
+ 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -38,7 +38,7 @@ export function JoinFarmForm() {
 
     try {
       // Join farm API call
-      const response = await fetch("http://127.0.0.1:8000/join-farm/", {
+      const response = await fetch("http://127.0.0.1:8000/auth/join-farm/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -107,9 +107,11 @@ export function JoinFarmForm() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="worker">Farm Worker</SelectItem>
+                        <SelectItem value="generalpurpose">General Purpose</SelectItem>
                         <SelectItem value="manager">Farm Manager</SelectItem>
-                        <SelectItem value="veterinarian">Veterinarian</SelectItem>
+                        <SelectItem value="vaterinary">Veterinarian</SelectItem>
+                        <SelectItem value="milktracker">Milk Troduction Tracker</SelectItem>
+                        <SelectItem value="finance">Finance</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
