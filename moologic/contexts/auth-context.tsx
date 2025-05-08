@@ -76,13 +76,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const getEffectiveFarm = (): User["farm"] | null => {
-    if (session?.user?.farm) {
-      localStorage.removeItem("farm_name") // clean up
-      return session.user.farm as User["farm"]
+    if (typeof window === "undefined") {
+      return null; // Or some safe fallback
     }
-    const storedFarm = localStorage.getItem("farm_name") as User["farm"] | null
-    return storedFarm
-  }
+  
+    const storedFarm = localStorage.getItem("farm_name") as User["farm"] | null;
+    return storedFarm;
+  };
+  
 
   const Farm = getEffectiveFarm()
 
