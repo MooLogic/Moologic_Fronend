@@ -13,10 +13,12 @@ import { useToast } from "@/components/ui/use-toast"
 import { Loader2 } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { getToken } from "next-auth/jwt"
 
 const formSchema = z.object({
   farm_code: z.string().min(1, { message: "Farm code must be at least 6 characters" }),
-  role: z.string().min(1, { message: "Please select your role" }),
+  workerRole: z.string().min(1, { message: "Please select your role" }),
+ 
 })
 
 export function JoinFarmForm() {
@@ -29,29 +31,37 @@ export function JoinFarmForm() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       farm_code: "",
-      role: "",
+      workerRole: "",
+     
     },
   })
-
+  console.log("session " + session?.user.id)
+  const token = session?.user.accessToken || ""
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true)
 
     try {
       // Join farm API call
+      
       const response = await fetch("http://127.0.0.1:8000/auth/join-farm/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.accessToken}`,
+          Authorization: `Bearer ${token || ""}`,
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify({
+          ...values,
+          user_id: session?.user?.id,
+        }),
       })
-
+      console.log("response" + response.body)
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || "Failed to join farm")
       }
 
+
+      localStorage.setItem("farm_name", values.farm_code)
       toast({
         title: "Successfully joined farm",
         description: "You can now access the farm's data",
@@ -96,7 +106,7 @@ export function JoinFarmForm() {
               />
               <FormField
                 control={form.control}
-                name="role"
+                name="workerRole"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Your Role</FormLabel>

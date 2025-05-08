@@ -45,7 +45,9 @@ export function LoginForm() {
     router.push("/dashboard")
     return null
   }
-
+  //remove farm_name and userRole from the local storage
+  localStorage.removeItem("farm_name")
+  localStorage.removeItem("userRole")
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true)
 
@@ -93,44 +95,7 @@ export function LoginForm() {
     }
   }
 
-  const handleDemoLogin = async (role: string) => {
-    setIsSubmitting(true)
-    try {
-      // For demo purposes, we'll use a standard email with the role as part of it
-      const result = await signIn("credentials", {
-        email: `demo-${role}@mooLogic.com`,
-        password: "demo123456",
-        redirect: false,
-      })
-
-      if (result?.error) {
-        toast({
-          title: t("Demo login failed"),
-          description: t("Could not log in with demo account"),
-          variant: "destructive",
-        })
-      } else {
-        toast({
-          title: t("Demo login successful"),
-          description: t("Welcome to the MooLogic demo!"),
-        })
-
-        if (role === "government") {
-          router.push("/government/dashboard")
-        } else {
-          router.push("/dashboard")
-        }
-      }
-    } catch (err) {
-      toast({
-        title: t("Login error"),
-        description: t("An unexpected error occurred. Please try again."),
-        variant: "destructive",
-      })
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
+  
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4 md:p-8">
@@ -225,17 +190,7 @@ export function LoginForm() {
               </svg>
               {t("Sign in with Google")}
             </Button>
-            <div className="grid grid-cols-1 gap-2">
-              <Button variant="outline" onClick={() => handleDemoLogin("owner")}>
-                {t("Demo as Farm Owner")}
-              </Button>
-              <Button variant="outline" onClick={() => handleDemoLogin("worker")}>
-                {t("Demo as Farm Worker")}
-              </Button>
-              <Button variant="outline" onClick={() => handleDemoLogin("government")}>
-                {t("Demo as Government Official")}
-              </Button>
-            </div>
+      
             <div className="text-center text-sm">
               {t("Don't have an account?")}{" "}
               <Link href="/auth/register" className="underline underline-offset-4 hover:text-primary">
