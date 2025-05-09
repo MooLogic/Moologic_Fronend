@@ -42,7 +42,7 @@ export function JoinFarmForm() {
 
     try {
       // Join farm API call
-      
+      console.log("token" + token)
       const response = await fetch("http://127.0.0.1:8000/auth/join-farm/", {
         method: "POST",
         headers: {
