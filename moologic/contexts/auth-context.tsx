@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const role = effectiveRole
   const Farm = effectiveFarm
-
+    
   console.log("Effective role:", role);
   console.log("Effective farm:", Farm);
   console.log(session?.user)
@@ -104,7 +104,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       router.push("/government/dashboard");
     } else if (role === "worker" && !Farm) {
       router.push("/auth/join-farm");
-    }
+    } else if (role && Farm) {
+      router.push("/dashboard");
+    } 
   }, [user, isLoading, router]);
 
   const login = async (email: string, password: string): Promise<boolean> => {

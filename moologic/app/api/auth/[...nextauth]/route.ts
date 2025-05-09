@@ -64,7 +64,9 @@ export const authOptions = {
         const data = await res.json();
 
         if (res.ok && data.access_token && data.user) {
-          //delete farm_name and userrole
+          
+          //delete farm_name and userRole from local storage
+          
           return {
             id: data.user.id,
             email: data.user.email,

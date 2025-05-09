@@ -47,20 +47,20 @@ export function JoinFarmForm() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token || ""}`,
+          // Authorization: `Bearer ${token || ""}`,
         },
         body: JSON.stringify({
           ...values,
           user_id: session?.user?.id,
         }),
       })
-      console.log("response" + response.body)
+      console.log("response from back" + response.body)
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || "Failed to join farm")
       }
 
-
+      console.log("response" + response.body)
       localStorage.setItem("farm_name", values.farm_code)
       toast({
         title: "Successfully joined farm",

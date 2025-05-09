@@ -65,6 +65,8 @@ export function LoginForm() {
           variant: "destructive",
         })
       } else {
+        localStorage.removeItem("farm_name")
+        localStorage.removeItem("userRole")
         toast({
           title: t("Login successful"),
           description: t("Welcome back to MooLogic!"),
