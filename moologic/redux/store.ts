@@ -10,6 +10,7 @@ import alertReducer from "./features/alert/alertSlice";
 import farmReducer from "./features/farm/farmSlice";
 import { cattleApi } from "@/lib/service/cattleService";
 import { inseminationApi } from "@/lib/service/inseminationService";
+import { milkApi } from "@/lib/service/milkService";
 
 export const store = configureStore({
   reducer: {
@@ -24,11 +25,12 @@ export const store = configureStore({
     farm: farmReducer,
     [cattleApi.reducerPath]: cattleApi.reducer,
     [inseminationApi.reducerPath]: inseminationApi.reducer, // Add inseminationApi reducer
+    [milkApi.reducerPath]: milkApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: false,
-    }).concat(cattleApi.middleware, inseminationApi.middleware), // Add inseminationApi middleware
+    }).concat(cattleApi.middleware, inseminationApi.middleware, milkApi.middleware), // Add inseminationApi middleware
 });
 
 export type RootState = ReturnType<typeof store.getState>;

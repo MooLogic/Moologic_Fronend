@@ -37,6 +37,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { data: session, status } = useSession();
   const [effectiveRole, setEffectiveRole] = useState<User["role"] | null>(null);
@@ -55,24 +56,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     : null;
 
-  const isLoading = status === "loading";
-
+  // Effect for fetching user data
   useEffect(() => {
-    if (isLoading) return;
+    if (status === "loading") return;
 
     const fetchUserData = async () => {
       if (!user) {
+        setIsLoading(false);
         router.push("/landing");
         return;
       }
 
       try {
-        // If session has role and farm, use them
-        if (session?.user?.role && session?.user?.farm) {
+        if (
+          session?.user?.role &&
+          (session.user.role !== "owner" || session.user.farm)
+        ) {
           setEffectiveRole(session.user.role as User["role"]);
-          setEffectiveFarm(session.user.farm);
+          setEffectiveFarm(session.user.farm || null);
         } else {
-          // Fetch from backend if session data is incomplete
+          setIsLoading(true);
           const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
           const response = await fetch(`${baseURL}/auth/user/${user.id}`, {
             method: "GET",
@@ -86,34 +89,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
           const userData: User = await response.json();
-
-          // Update state with fetched data
           setEffectiveRole(userData.role);
           setEffectiveFarm(userData.farm || null);
-        }
-
-        // Redirection logic based on role and farm
-        if (!effectiveRole) {
-          console.log("No role found, redirecting to role selection");
-          router.push("/auth/role-selection");
-        } else if (effectiveRole === "owner" && !effectiveFarm) {
-          router.push("/auth/create-farm");
-        } else if (effectiveRole === "government") {
-          router.push("/government/dashboard");
-        } else if (effectiveRole === "worker" && !effectiveFarm) {
-          router.push("/auth/join-farm");
         }
       } catch (error: any) {
         setError(error.message || "Failed to fetch user data");
         router.push("/auth/login");
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchUserData();
-  }, [user, isLoading, router, session, effectiveRole, effectiveFarm]);
+  }, [user, status, router]);
+
+  // Separate effect for redirection logic
+  useEffect(() => {
+    if (isLoading || status === "loading") return; // Wait for loading to complete
+
+    console.log("Redirection check - role:", effectiveRole, "farm:", effectiveFarm);
+
+    if (!effectiveRole) {
+      console.log("No role found, redirecting to role selection");
+      router.push("/auth/role-selection");
+    } else if (effectiveRole === "owner" && !effectiveFarm) {
+      router.push("/auth/create-farm");
+    } else if (effectiveRole === "government") {
+      router.push("/government/dashboard");
+    } else if (effectiveRole === "worker" && !effectiveFarm) {
+      router.push("/auth/join-farm");
+    }
+  }, [effectiveRole, effectiveFarm, isLoading, status, router]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setError(null);
+    setIsLoading(true);
     try {
       const result = await signIn("credentials", {
         email,
@@ -123,12 +133,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (result?.error) {
         setError(result.error);
+        setIsLoading(false);
         return false;
       }
 
       return true;
     } catch (error: any) {
       setError(error.message || "Login failed");
+      setIsLoading(false);
       return false;
     }
   };

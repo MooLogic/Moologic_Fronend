@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Plus, Filter, Search, Edit, Trash2, Download } from "lucide-react"
+import { JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, useState } from "react"
+import { Plus, Filter, Search, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -18,87 +18,126 @@ import { Label } from "@/components/ui/label"
 import { DatePicker } from "@/components/date-picker"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-
-// Sample data
-const milkRecords = [
-  {
-    id: 1,
-    cattleId: "#876364",
-    date: "12-12-2023",
-    morningYield: 12.5,
-    eveningYield: 10.2,
-    totalYield: 22.7,
-    quality: "Good",
-    notes: "",
-  },
-  {
-    id: 2,
-    cattleId: "#876368",
-    date: "12-12-2023",
-    morningYield: 14.2,
-    eveningYield: 11.8,
-    totalYield: 26.0,
-    quality: "Excellent",
-    notes: "Higher than average yield",
-  },
-  {
-    id: 3,
-    cattleId: "#876372",
-    date: "12-12-2023",
-    morningYield: 9.8,
-    eveningYield: 8.5,
-    totalYield: 18.3,
-    quality: "Average",
-    notes: "Slightly below average",
-  },
-  {
-    id: 4,
-    cattleId: "#876364",
-    date: "11-12-2023",
-    morningYield: 13.1,
-    eveningYield: 10.5,
-    totalYield: 23.6,
-    quality: "Good",
-    notes: "",
-  },
-  {
-    id: 5,
-    cattleId: "#876368",
-    date: "11-12-2023",
-    morningYield: 13.8,
-    eveningYield: 11.2,
-    totalYield: 25.0,
-    quality: "Good",
-    notes: "",
-  },
-]
+import { Skeleton } from "@/components/ui/skeleton"
+import { useGetMilkRecordsQuery, useAddMilkRecordMutation } from "@/lib/service/milkService"
+import { useGetCattleDataQuery } from "@/lib/service/cattleService"
+import { format } from "date-fns"
+import { useSession } from "next-auth/react"
 
 export function MilkRecords() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [selectedRecord, setSelectedRecord] = useState(null)
+  const [formData, setFormData] = useState({
+    cattle_tag: "",
+    date: new Date(),
+    quantity: 0,
+    shift: "morning",
+  })
 
-  const handleDelete = (record) => {
-    setSelectedRecord(record)
-    setIsDeleteDialogOpen(true)
-  }
+  // Fetch session and access token
+  const { data: session } = useSession()
+  const accessToken = session?.user?.accessToken || ""
 
-  const handleEdit = (record) => {
-    setSelectedRecord(record)
-    setIsAddDialogOpen(true)
-  }
+  // Fetch milk records and cattle
+  const { data: milkRecords = [], isLoading: isLoadingRecords, error: recordsError } = useGetMilkRecordsQuery(
+    { accessToken },
+    { skip: !accessToken }
+  )
+  const { data: cattle = [], isLoading: isLoadingCattle } = useGetCattleDataQuery(
+    { accessToken },
+    { skip: !accessToken }
+  )
 
-  const confirmDelete = () => {
-    // Delete logic would go here
-    setIsDeleteDialogOpen(false)
-  }
+  // Mutation for adding a new record
+  const [addMilkRecord, { isLoading: isAdding }] = useAddMilkRecordMutation()
 
   // Calculate summary statistics
-  const totalMilkToday = milkRecords
-    .filter((record) => record.date === "12-12-2023")
-    .reduce((sum, record) => sum + record.totalYield, 0)
+  const today = format(new Date(), "yyyy-MM-dd")
+  const todayRecords = milkRecords.filter((record) => record.date === today)
+  const totalMilkToday = todayRecords.reduce((sum, record) => sum + record.quantity, 0)
+  const uniqueCowsToday = new Set(todayRecords.map((record) => record.cattle_tag)).size
+  const averageYieldPerCow = uniqueCowsToday > 0 ? totalMilkToday / uniqueCowsToday : 0
 
-  const averageYieldPerCow = totalMilkToday / 3 // 3 cows with records today
+  // Group records by cattle and date for display
+  const groupedRecords = milkRecords.reduce((acc, record) => {
+    const key = `${record.cattle_tag}-${record.date}`
+    if (!acc[key]) {
+      acc[key] = {
+        cattle_tag: record.cattle_tag,
+        date: record.date,
+        morning: 0,
+        afternoon: 0,
+        night: 0,
+        total: 0,
+      }
+    }
+    if (record.shift.toLowerCase() === "morning") {
+      acc[key].morning = record.quantity
+    } else if (record.shift.toLowerCase() === "afternoon") {
+      acc[key].afternoon = record.quantity
+    } else if (record.shift.toLowerCase() === "night") {
+      acc[key].night = record.quantity
+    }
+    acc[key].total = acc[key].morning + acc[key].afternoon + acc[key].night
+    return acc
+  }, {} as Record<string, { cattle_tag: string; date: string; morning: number; afternoon: number; night: number; total: number }>)
+
+  const displayRecords = Object.values(groupedRecords)
+
+  const handleAddRecord = async () => {
+    try {
+      await addMilkRecord({
+        accessToken,
+        cattle_tag: formData.cattle_tag,
+        date: format(formData.date, "yyyy-MM-dd"),
+        quantity: formData.quantity,
+        shift: formData.shift,
+      }).unwrap()
+      setIsAddDialogOpen(false)
+      setFormData({ cattle_tag: "", date: new Date(), quantity: 0, shift: "morning" })
+    } catch (err) {
+      console.error("Failed to add milk record:", err)
+    }
+  }
+
+  if (isLoadingRecords || isLoadingCattle) {
+    return (
+      <main className="flex-1 p-8">
+        <Skeleton className="h-16 w-full mb-6" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-24 w-full" />
+          ))}
+        </div>
+        <Skeleton className="h-12 w-full mb-6" />
+        <div className="bg-white rounded-lg border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {[...Array(5)].map((_, i) => (
+                  <TableHead key={i}>
+                    <Skeleton className="h-6 w-24" />
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {[...Array(5)].map((_, i) => (
+                <TableRow key={i}>
+                  {[...Array(5)].map((_, j) => (
+                    <TableCell key={j}>
+                      <Skeleton className="h-6 w-24" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </main>
+    )
+  }
+
+  if (recordsError) return <div>Error loading milk records</div>
 
   return (
     <main className="flex-1">
@@ -131,7 +170,7 @@ export function MilkRecords() {
               <CardTitle className="text-sm font-medium text-gray-500">Active Milking Cows</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">3</div>
+              <div className="text-2xl font-bold">{uniqueCowsToday}</div>
             </CardContent>
           </Card>
         </div>
@@ -158,12 +197,8 @@ export function MilkRecords() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[525px]">
               <DialogHeader>
-                <DialogTitle>{selectedRecord ? "Edit Milk Record" : "Add New Milk Record"}</DialogTitle>
-                <DialogDescription>
-                  {selectedRecord
-                    ? "Update the details of this milk record"
-                    : "Enter the details of the new milk record"}
-                </DialogDescription>
+                <DialogTitle>Add New Milk Record</DialogTitle>
+                <DialogDescription>Enter the details of the new milk record</DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -171,14 +206,19 @@ export function MilkRecords() {
                     Cattle ID
                   </Label>
                   <div className="col-span-3">
-                    <Select defaultValue={selectedRecord?.cattleId || ""}>
+                    <Select
+                      value={formData.cattle_tag}
+                      onValueChange={(value) => setFormData({ ...formData, cattle_tag: value })}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select cattle" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="#876364">#876364</SelectItem>
-                        <SelectItem value="#876368">#876368</SelectItem>
-                        <SelectItem value="#876372">#876372</SelectItem>
+                        {cattle.map((cow: { id: Key | null | undefined; ear_tag_no: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined }) => (
+                          <SelectItem key={cow.id} value={cow.ear_tag_no}>
+                            {cow.ear_tag_no}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -188,85 +228,62 @@ export function MilkRecords() {
                     Date
                   </Label>
                   <div className="col-span-3">
-                    <DatePicker />
+                    <DatePicker
+                      date={formData.date}
+                      setDate={(date: Date | null) => setFormData({ ...formData, date: date || new Date() })}
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="morningYield" className="text-right">
-                    Morning Yield (L)
+                  <Label htmlFor="quantity" className="text-right">
+                    Yield (L)
                   </Label>
                   <Input
-                    id="morningYield"
+                    id="quantity"
                     type="number"
                     step="0.1"
                     min="0"
-                    defaultValue={selectedRecord?.morningYield || ""}
+                    value={formData.quantity}
+                    onChange={(e) => setFormData({ ...formData, quantity: parseFloat(e.target.value) || 0 })}
                     className="col-span-3"
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="eveningYield" className="text-right">
-                    Evening Yield (L)
-                  </Label>
-                  <Input
-                    id="eveningYield"
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    defaultValue={selectedRecord?.eveningYield || ""}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="quality" className="text-right">
-                    Milk Quality
+                  <Label htmlFor="shift" className="text-right">
+                    Shift
                   </Label>
                   <div className="col-span-3">
-                    <Select defaultValue={selectedRecord?.quality || ""}>
+                    <Select
+                      value={formData.shift}
+                      onValueChange={(value) => setFormData({ ...formData, shift: value })}
+                    >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select quality" />
+                        <SelectValue placeholder="Select shift" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Excellent">Excellent</SelectItem>
-                        <SelectItem value="Good">Good</SelectItem>
-                        <SelectItem value="Average">Average</SelectItem>
-                        <SelectItem value="Poor">Poor</SelectItem>
+                        <SelectItem value="morning">Morning</SelectItem>
+                        <SelectItem value="afternoon">Afternoon</SelectItem>
+                        <SelectItem value="night">Night</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="notes" className="text-right">
-                    Notes
-                  </Label>
-                  <Input
-                    id="notes"
-                    defaultValue={selectedRecord?.notes || ""}
-                    className="col-span-3"
-                    placeholder="Any additional notes..."
-                  />
                 </div>
               </div>
               <DialogFooter>
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => {
-                    setIsAddDialogOpen(false)
-                    setSelectedRecord(null)
-                  }}
+                  onClick={() => setIsAddDialogOpen(false)}
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   className="bg-indigo-600 hover:bg-indigo-700"
-                  onClick={() => {
-                    setIsAddDialogOpen(false)
-                    setSelectedRecord(null)
-                  }}
+                  onClick={handleAddRecord}
+                  disabled={isAdding}
                 >
-                  {selectedRecord ? "Update Record" : "Add Record"}
+                  {isAdding ? "Adding..." : "Add Record"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -281,74 +298,26 @@ export function MilkRecords() {
                 <TableHead>Cattle ID</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Morning (L)</TableHead>
-                <TableHead>Evening (L)</TableHead>
+                <TableHead>Afternoon (L)</TableHead>
+                <TableHead>Night (L)</TableHead>
                 <TableHead>Total (L)</TableHead>
-                <TableHead>Quality</TableHead>
-                <TableHead>Notes</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {milkRecords.map((record) => (
-                <TableRow key={record.id}>
-                  <TableCell className="font-medium">{record.cattleId}</TableCell>
+              {displayRecords.map((record, index) => (
+                <TableRow key={index}>
+                  <TableCell className="font-medium">{record.cattle_tag}</TableCell>
                   <TableCell>{record.date}</TableCell>
-                  <TableCell>{record.morningYield}</TableCell>
-                  <TableCell>{record.eveningYield}</TableCell>
-                  <TableCell className="font-medium">{record.totalYield}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        record.quality === "Excellent"
-                          ? "bg-green-100 text-green-800"
-                          : record.quality === "Good"
-                            ? "bg-blue-100 text-blue-800"
-                            : record.quality === "Average"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {record.quality}
-                    </span>
-                  </TableCell>
-                  <TableCell className="max-w-[200px] truncate">{record.notes}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(record)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(record)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+                  <TableCell>{record.morning.toFixed(1)}</TableCell>
+                  <TableCell>{record.afternoon.toFixed(1)}</TableCell>
+                  <TableCell>{record.night.toFixed(1)}</TableCell>
+                  <TableCell className="font-medium">{record.total.toFixed(1)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </div>
-
-        {/* Delete Confirmation Dialog */}
-        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Confirm Deletion</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to delete this milk record? This action cannot be undone.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" variant="destructive" onClick={confirmDelete}>
-                Delete
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </main>
   )
 }
-
