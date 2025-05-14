@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "@/components/providers/language-provider"
 import { StatCards } from "@/components/stat-cards"
 import { TopCows } from "@/components/top-cows"
-import { AnimalList } from "@/components/animal-list"
+import { AnimalList} from "@/components/animal-list"
 import { MilkProductionChart } from "@/components/milk-production-chart"
 import { LactationDonutChart } from "@/components/lactation-donut-chart"
 import { LessPerformingTable } from "@/components/less-performing-table"
@@ -108,7 +108,13 @@ export function DashboardContent() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.8 }}
           >
-            <FinancialSummaryCard />
+            <FinancialSummaryCard 
+              title={t("Financial Summary")}
+              value={10000}
+              change={5}
+              trend="up"
+              icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" d="M5 12l5 5L20 7"></path></svg>}
+            />
           </motion.div>
         </div>
 
@@ -117,7 +123,7 @@ export function DashboardContent() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.9 }}
         >
-          <AnimalList />
+          <AnimalList onSelectAnimal={(animal: Animal) => console.log("Selected animal:", animal)} />
         </motion.div>
       </div>
     </div>

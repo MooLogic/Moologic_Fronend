@@ -18,80 +18,158 @@ import { Label } from "@/components/ui/label"
 import { DatePicker } from "@/components/date-picker"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { useSession } from "next-auth/react"
+import {
+  useGetInseminationsQuery,
+  usePostInseminationMutation,
+  useUpdateInseminationMutation,
+  useDeleteInseminationMutation,
+} from "@/lib/service/inseminationService"
+import { useGetCattleDataQuery } from "@/lib/service/cattleService"
 
-// Sample data
-const inseminationRecords = [
-  {
-    id: 1,
-    cattleId: "#876364",
-    date: "12-12-2023",
-    bullId: "BULL-123",
-    semenType: "Sexed",
-    technician: "John Doe",
-    status: "Pending",
-    notes: "First insemination",
-  },
-  {
-    id: 2,
-    cattleId: "#876368",
-    date: "10-12-2023",
-    bullId: "BULL-456",
-    semenType: "Conventional",
-    technician: "Jane Smith",
-    status: "Successful",
-    notes: "Confirmed pregnancy on 10-01-2024",
-  },
-  {
-    id: 3,
-    cattleId: "#876372",
-    date: "05-12-2023",
-    bullId: "BULL-789",
-    semenType: "Sexed",
-    technician: "John Doe",
-    status: "Failed",
-    notes: "Will need to repeat",
-  },
-  {
-    id: 4,
-    cattleId: "#876375",
-    date: "01-12-2023",
-    bullId: "BULL-123",
-    semenType: "Conventional",
-    technician: "Jane Smith",
-    status: "Successful",
-    notes: "Confirmed pregnancy on 01-01-2024",
-  },
-  {
-    id: 5,
-    cattleId: "#876380",
-    date: "25-11-2023",
-    bullId: "BULL-456",
-    semenType: "Sexed",
-    technician: "John Doe",
-    status: "Pending",
-    notes: "",
-  },
-]
+// Utility function to format date to YYYY-MM-DD
+const formatDate = (date: Date | string | undefined): string => {
+  if (!date) return ""
+  const d = date instanceof Date ? date : new Date(date)
+  if (isNaN(d.getTime())) return "" // Handle invalid dates
+  return d.toISOString().split("T")[0] // Returns YYYY-MM-DD
+}
 
 export function InseminationRecords() {
+  const { data: session, status } = useSession()
+  const accessToken = session?.user?.accessToken || ""
+
+  // Fetch inseminations
+  const { data: inseminationData, isLoading: inseminationsLoading, error: inseminationsError } = useGetInseminationsQuery(
+    { accessToken },
+    { skip: !accessToken }
+  )
+
+  // Fetch cattle for dropdown
+  const { data: cattleData, isLoading: cattleLoading } = useGetCattleDataQuery(
+    { accessToken },
+    { skip: !accessToken }
+  )
+
+  // Mutations
+  const [postInsemination] = usePostInseminationMutation()
+  const [updateInsemination] = useUpdateInseminationMutation()
+  const [deleteInsemination] = useDeleteInseminationMutation()
+
+  // Form state
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [selectedRecord, setSelectedRecord] = useState(null)
+  const [selectedRecord, setSelectedRecord] = useState<any | null>(null)
+  const [formData, setFormData] = useState({
+    accessToken: accessToken,
+    cattle_id: "",
+    insemination_date: "",
+    bull_id: "",
+    insemination_method: "",
+    insemination_status: "",
+    insemination_type: "",
+    notes: "",
+  })
 
-  const handleDelete = (record) => {
+  // Handle form input changes
+  const handleInputChange = (field: string, value: string | Date) => {
+    if (field === "insemination_date" && value) {
+      // Format date to YYYY-MM-DD when updating insemination_date
+      setFormData((prev) => ({ ...prev, [field]: formatDate(value) }))
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }))
+    }
+  }
+
+  // Handle form submission
+  const handleSubmit = async () => {
+    // Ensure insemination_date is in YYYY-MM-DD format
+    const formattedPayload = {
+      accessToken,
+      cattle_id: formData.cattle_id,
+      insemination_date: formatDate(formData.insemination_date), // Reformat to be safe
+      bull_id: formData.bull_id || undefined,
+      insemination_method: formData.insemination_method,
+      insemination_status: formData.insemination_status,
+      insemination_type: formData.insemination_type,
+      notes: formData.notes || undefined,
+    }
+
+    try {
+      if (selectedRecord) {
+        // Update existing record
+        await updateInsemination({ ...formattedPayload, id: selectedRecord.id }).unwrap()
+      } else {
+        // Create new record
+        await postInsemination(formattedPayload).unwrap()
+      }
+      setIsAddDialogOpen(false)
+      resetForm()
+    } catch (error) {
+      console.error("Failed to submit insemination:", error)
+      alert("Failed to save insemination record. Please try again.")
+    }
+  }
+
+  // Handle delete
+  const handleDelete = (record: any) => {
     setSelectedRecord(record)
     setIsDeleteDialogOpen(true)
   }
 
-  const handleEdit = (record) => {
+  const confirmDelete = async () => {
+    try {
+      await deleteInsemination({ accessToken, id: selectedRecord.id }).unwrap()
+      setIsDeleteDialogOpen(false)
+      setSelectedRecord(null)
+    } catch (error) {
+      console.error("Failed to delete insemination:", error)
+      alert("Failed to delete insemination record. Please try again.")
+    }
+  }
+
+  // Handle edit
+  const handleEdit = (record: any) => {
     setSelectedRecord(record)
+    setFormData({
+      accessToken: accessToken,
+      cattle_id: record.cattle?.id?.toString() || record.cattle?.toString() || "",
+      insemination_date: record.insemination_date || "", // Already in YYYY-MM-DD from backend
+      bull_id: record.bull_id || "",
+      insemination_method: record.insemination_method || "",
+      insemination_status: record.insemination_status || "",
+      insemination_type: record.insemination_type || "",
+      notes: record.notes || "",
+    })
     setIsAddDialogOpen(true)
   }
 
-  const confirmDelete = () => {
-    // Delete logic would go here
-    setIsDeleteDialogOpen(false)
+  // Reset form
+  const resetForm = () => {
+    setFormData({
+      accessToken: accessToken,
+      cattle_id: "",
+      insemination_date: "",
+      bull_id: "",
+      insemination_method: "",
+      insemination_status: "",
+      insemination_type: "",
+      notes: "",
+    })
+    setSelectedRecord(null)
   }
+
+  // Loading and error states
+  if (status === "loading" || inseminationsLoading || cattleLoading) {
+    return <div>Loading...</div>
+  }
+
+  if (inseminationsError) {
+    console.error("Insemination data error:", inseminationsError)
+    return <div className="text-red-500">Failed to load insemination records.</div>
+  }
+
+  const inseminations = inseminationData?.results || []
 
   return (
     <main className="flex-1">
@@ -132,16 +210,19 @@ export function InseminationRecords() {
                     Cattle ID
                   </Label>
                   <div className="col-span-3">
-                    <Select defaultValue={selectedRecord?.cattleId || ""}>
+                    <Select
+                      value={formData.cattle_id}
+                      onValueChange={(value) => handleInputChange("cattle_id", value)}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select cattle" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="#876364">#876364</SelectItem>
-                        <SelectItem value="#876368">#876368</SelectItem>
-                        <SelectItem value="#876372">#876372</SelectItem>
-                        <SelectItem value="#876375">#876375</SelectItem>
-                        <SelectItem value="#876380">#876380</SelectItem>
+                        {cattleData?.results?.map((cattle: any) => (
+                          <SelectItem key={cattle.id} value={cattle.id.toString()}>
+                            {cattle.ear_tag_no || cattle.id}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -151,71 +232,78 @@ export function InseminationRecords() {
                     Date
                   </Label>
                   <div className="col-span-3">
-                    <DatePicker />
+                    <DatePicker
+                      value={formData.insemination_date ? new Date(formData.insemination_date) : undefined}
+                      onChange={(date) => handleInputChange("insemination_date", date)}
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="bullId" className="text-right">
                     Bull ID
                   </Label>
-                  <div className="col-span-3">
-                    <Select defaultValue={selectedRecord?.bullId || ""}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select bull" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="BULL-123">BULL-123</SelectItem>
-                        <SelectItem value="BULL-456">BULL-456</SelectItem>
-                        <SelectItem value="BULL-789">BULL-789</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Input
+                    id="bullId"
+                    value={formData.bull_id}
+                    onChange={(e) => handleInputChange("bull_id", e.target.value)}
+                    className="col-span-3"
+                    placeholder="Enter bull ID (optional)"
+                  />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="semenType" className="text-right">
-                    Semen Type
+                  <Label htmlFor="inseminationMethod" className="text-right">
+                    Method
                   </Label>
                   <div className="col-span-3">
-                    <Select defaultValue={selectedRecord?.semenType || ""}>
+                    <Select
+                      value={formData.insemination_method}
+                      onValueChange={(value) => handleInputChange("insemination_method", value)}
+                    >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select semen type" />
+                        <SelectValue placeholder="Select method" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Conventional">Conventional</SelectItem>
-                        <SelectItem value="Sexed">Sexed</SelectItem>
+                        <SelectItem value="natural">Natural</SelectItem>
+                        <SelectItem value="artificial">Artificial</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="technician" className="text-right">
-                    Technician
-                  </Label>
-                  <div className="col-span-3">
-                    <Select defaultValue={selectedRecord?.technician || ""}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select technician" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="John Doe">John Doe</SelectItem>
-                        <SelectItem value="Jane Smith">Jane Smith</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="status" className="text-right">
+                  <Label htmlFor="inseminationStatus" className="text-right">
                     Status
                   </Label>
                   <div className="col-span-3">
-                    <Select defaultValue={selectedRecord?.status || ""}>
+                    <Select
+                      value={formData.insemination_status}
+                      onValueChange={(value) => handleInputChange("insemination_status", value)}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Pending">Pending</SelectItem>
-                        <SelectItem value="Successful">Successful</SelectItem>
-                        <SelectItem value="Failed">Failed</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="successful">Successful</SelectItem>
+                        <SelectItem value="failed">Failed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="inseminationType" className="text-right">
+                    Type
+                  </Label>
+                  <div className="col-span-3">
+                    <Select
+                      value={formData.insemination_type}
+                      onValueChange={(value) => handleInputChange("insemination_type", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="natural">Natural</SelectItem>
+                        <SelectItem value="artificial">Artificial</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -226,30 +314,29 @@ export function InseminationRecords() {
                   </Label>
                   <Textarea
                     id="notes"
-                    defaultValue={selectedRecord?.notes || ""}
+                    value={formData.notes}
+                    onChange={(e) => handleInputChange("notes", e.target.value)}
                     className="col-span-3"
                     placeholder="Enter any additional notes..."
                   />
                 </div>
               </div>
+             ніка
               <DialogFooter>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => {
                     setIsAddDialogOpen(false)
-                    setSelectedRecord(null)
+                    resetForm()
                   }}
                 >
                   Cancel
                 </Button>
                 <Button
-                  type="submit"
+                  type="button"
                   className="bg-indigo-600 hover:bg-indigo-700"
-                  onClick={() => {
-                    setIsAddDialogOpen(false)
-                    setSelectedRecord(null)
-                  }}
+                  onClick={handleSubmit}
                 >
                   {selectedRecord ? "Update Record" : "Add Record"}
                 </Button>
@@ -266,35 +353,37 @@ export function InseminationRecords() {
                 <TableHead>Cattle ID</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Bull ID</TableHead>
-                <TableHead>Semen Type</TableHead>
-                <TableHead>Technician</TableHead>
+                <TableHead>Method</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Type</TableHead>
                 <TableHead>Notes</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {inseminationRecords.map((record) => (
+              {inseminations.map((record: any) => (
                 <TableRow key={record.id}>
-                  <TableCell className="font-medium">{record.cattleId}</TableCell>
-                  <TableCell>{record.date}</TableCell>
-                  <TableCell>{record.bullId}</TableCell>
-                  <TableCell>{record.semenType}</TableCell>
-                  <TableCell>{record.technician}</TableCell>
+                  <TableCell className="font-medium">
+                    {record.cattle?.ear_tag_no || record.cattle?.id || record.cattle}
+                  </TableCell>
+                  <TableCell>{record.insemination_date}</TableCell>
+                  <TableCell>{record.bull_id || "-"}</TableCell>
+                  <TableCell>{record.insemination_method}</TableCell>
                   <TableCell>
                     <span
                       className={`px-2 py-1 rounded-full text-xs ${
-                        record.status === "Successful"
+                        record.insemination_status === "successful"
                           ? "bg-green-100 text-green-800"
-                          : record.status === "Pending"
+                          : record.insemination_status === "pending"
                             ? "bg-yellow-100 text-yellow-800"
                             : "bg-red-100 text-red-800"
                       }`}
                     >
-                      {record.status}
+                      {record.insemination_status}
                     </span>
                   </TableCell>
-                  <TableCell className="max-w-[200px] truncate">{record.notes}</TableCell>
+                  <TableCell>{record.insemination_type}</TableCell>
+                  <TableCell className="max-w-[200px] truncate">{record.notes || "-"}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button variant="ghost" size="icon" onClick={() => handleEdit(record)}>
@@ -315,6 +404,7 @@ export function InseminationRecords() {
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
+             _vue
               <DialogTitle>Confirm Deletion</DialogTitle>
               <DialogDescription>
                 Are you sure you want to delete this insemination record? This action cannot be undone.
@@ -324,7 +414,7 @@ export function InseminationRecords() {
               <Button type="button" variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" variant="destructive" onClick={confirmDelete}>
+              <Button type="button" variant="destructive" onClick={confirmDelete}>
                 Delete
               </Button>
             </DialogFooter>
@@ -334,4 +424,3 @@ export function InseminationRecords() {
     </main>
   )
 }
-

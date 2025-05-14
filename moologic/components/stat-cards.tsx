@@ -3,26 +3,45 @@
 import { motion } from "framer-motion"
 import { Box, Milk, Circle, Activity } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
+import { useGetCattleDataQuery, useGetCattleByIdQuery, usePostCattleMutation } from "@/lib/service/cattleService"
+import { useSession } from "next-auth/react"
+
+
+//fetch data from redux store
 
 export function StatCards() {
+  //get the access token from session storage
+  const { data: session, update } = useSession()
+  const token = session?.user.accessToken || ""
+  // get all cattle data using egtCattleDataQuery
+  const { data: cattleData, error,  isLoading } = useGetCattleDataQuery({
+    accessToken: token,
+  })
+  console.log("cattleData", cattleData)
+  console.log("error", error)
+  const total_animal = cattleData?.count || 0
+  const lactating = cattleData?.results.filter((animal) => animal.is_lactating).length || 0
+  const pregnant = cattleData?.results.filter((animal) => animal.gestation_status == "pregnant").length || 0
+
+  
   const stats = [
     {
       icon: <Box className="h-6 w-6 text-indigo-500" />,
-      value: "234",
+      value: total_animal,
       label: "Total Animal",
       bgColor: "bg-indigo-50",
       delay: 0.1,
     },
     {
       icon: <Milk className="h-6 w-6 text-amber-500" />,
-      value: "123",
+      value: lactating,
       label: "Lactating",
       bgColor: "bg-amber-50",
       delay: 0.2,
     },
     {
       icon: <Circle className="h-6 w-6 text-indigo-500" />,
-      value: "32",
+      value: pregnant,
       label: "Pregnant",
       bgColor: "bg-indigo-50",
       delay: 0.3,

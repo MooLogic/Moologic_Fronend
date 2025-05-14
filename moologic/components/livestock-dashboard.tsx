@@ -1,40 +1,52 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useDispatch, useSelector } from "react-redux"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { fetchAllCattle } from "@/redux/features/cattle/cattleSlice"
-import type { AppDispatch, RootState } from "@/redux/store"
-import { AllAnimals } from "@/components/all-animals"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useTranslation } from "@/components/providers/language-provider"
 import { Plus } from "lucide-react"
 import Link from "next/link"
 import { LoadingScreen } from "@/components/loading-screen"
+import { AllAnimals } from "@/components/all-animals"
+import { useGetCattleDataQuery } from "@/lib/service/cattleService"
+import { useSession } from "next-auth/react"
 
 export function LivestockDashboard() {
   const { t } = useTranslation()
-  const dispatch = useDispatch<AppDispatch>()
-  const { cattle, loading } = useSelector((state: RootState) => state.cattle)
+  const { data: session } = useSession()
+  const accessToken = session?.user?.accessToken || ""
+
+  // Fetch cattle data using RTK Query
+  const {
+    data: cattleData,
+    isLoading,
+    error,
+  } = useGetCattleDataQuery({ accessToken }, { skip: !accessToken })
+
   const [activeTab, setActiveTab] = useState("all")
 
-  useEffect(() => {
-    dispatch(fetchAllCattle())
-  }, [dispatch])
-
-  if (loading) {
+  // Handle loading and error states
+  if (isLoading) {
     return <LoadingScreen />
   }
 
+  if (error) {
+    console.error("Failed to load cattle data:", error)
+    return <div className="text-red-500">{t("Failed to load cattle data")}</div>
+  }
+
+  // Use cattle data (assuming cattleData.results contains the array of cattle)
+  const cattle = cattleData?.results || []
+
   // Calculate statistics
   const totalCattle = cattle.length
-  const femaleCattle = cattle.filter((c) => c.gender === "female").length
-  const maleCattle = cattle.filter((c) => c.gender === "male").length
-  const pregnantCattle = cattle.filter((c) => c.gestation_status === "pregnant").length
-  const calvingCattle = cattle.filter((c) => c.gestation_status === "calving").length
-  const healthyCattle = cattle.filter((c) => c.health_status === "healthy").length
-  const sickCattle = cattle.filter((c) => c.health_status === "sick").length
+  const femaleCattle = cattle.filter((c: { gender: string }) => c.gender === "female").length
+  const maleCattle = cattle.filter((c: { gender: string }) => c.gender === "male").length
+  const pregnantCattle = cattle.filter((c: { gestation_status: string }) => c.gestation_status === "pregnant").length
+  const calvingCattle = cattle.filter((c: { gestation_status: string }) => c.gestation_status === "calving").length
+  const healthyCattle = cattle.filter((c: { health_status: string }) => c.health_status === "healthy").length
+  const sickCattle = cattle.filter((c: { health_status: string }) => c.health_status === "sick").length
 
   return (
     <div className="space-y-4">
@@ -121,7 +133,7 @@ export function LivestockDashboard() {
               <CardDescription>{t("View and manage all cows in your herd")}</CardDescription>
             </CardHeader>
             <CardContent>
-              <AllAnimals animals={cattle.filter((c) => c.life_stage === "cow")} showFilters={false} />
+              <AllAnimals animals={cattle.filter((c: { life_stage: string }) => c.life_stage === "cow")} showFilters={false} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -132,7 +144,7 @@ export function LivestockDashboard() {
               <CardDescription>{t("View and manage all heifers in your herd")}</CardDescription>
             </CardHeader>
             <CardContent>
-              <AllAnimals animals={cattle.filter((c) => c.life_stage === "heifer")} showFilters={false} />
+              <AllAnimals animals={cattle.filter((c: { life_stage: string }) => c.life_stage === "heifer")} showFilters={false} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -143,7 +155,7 @@ export function LivestockDashboard() {
               <CardDescription>{t("View and manage all calves in your herd")}</CardDescription>
             </CardHeader>
             <CardContent>
-              <AllAnimals animals={cattle.filter((c) => c.life_stage === "calf")} showFilters={false} />
+              <AllAnimals animals={cattle.filter((c: { life_stage: string }) => c.life_stage === "calf")} showFilters={false} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -154,7 +166,7 @@ export function LivestockDashboard() {
               <CardDescription>{t("View and manage all bulls in your herd")}</CardDescription>
             </CardHeader>
             <CardContent>
-              <AllAnimals animals={cattle.filter((c) => c.life_stage === "bull")} showFilters={false} />
+              <AllAnimals animals={cattle.filter((c: { life_stage: string }) => c.life_stage === "bull")} showFilters={false} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -162,4 +174,3 @@ export function LivestockDashboard() {
     </div>
   )
 }
-
