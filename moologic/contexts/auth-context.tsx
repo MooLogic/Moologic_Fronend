@@ -7,7 +7,7 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { signIn, signOut, useSession } from "next-auth/react";
 
 type User = {
@@ -39,9 +39,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
   const { data: session, status } = useSession();
   const [effectiveRole, setEffectiveRole] = useState<User["role"] | null>(null);
   const [effectiveFarm, setEffectiveFarm] = useState<User["farm"] | null>(null);
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   const user: User | null = session?.user
     ? {
@@ -50,76 +52,157 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: session.user.email || "",
         role:
           (session.user.role as "owner" | "worker" | "government" | "user") ||
-          "",
+          "user",
         image: session.user.image ?? undefined,
         farm: session.user.farm,
       }
     : null;
 
-  // Effect for fetching user data
+  // Effect for fetching user data and handling role/farm
   useEffect(() => {
-    if (status === "loading") return;
+    if (status === "loading") {
+      console.log("Session loading, skipping fetchUserData");
+      return;
+    }
 
     const fetchUserData = async () => {
-      if (!user) {
+      if (!user || status !== "authenticated") {
+        console.log("No authenticated user, setting default states");
+        setEffectiveRole(null);
+        setEffectiveFarm(null);
         setIsLoading(false);
-        router.push("/landing");
         return;
       }
 
       try {
-        if (
-          session?.user?.role &&
-          (session.user.role !== "owner" || session.user.farm)
-        ) {
+        // Prioritize session data
+        if (session?.user?.role) {
           setEffectiveRole(session.user.role as User["role"]);
           setEffectiveFarm(session.user.farm || null);
+          console.log("Using session data:", {
+            id: user.id,
+            email: user.email,
+            role: session.user.role,
+            farm: session.user.farm,
+            accessToken: session.user.accessToken ? "[redacted]" : null,
+          });
+          // Clear localStorage
+          localStorage.removeItem("userRole");
+          localStorage.removeItem("farm_name");
         } else {
+          // Fetch from API if no session role
+          console.log("No role in session, fetching from API");
           setIsLoading(true);
-          const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-          const response = await fetch(`${baseURL}/auth/user/${user.id}`, {
+          const baseURL = process.env.NEXT_PUBLIC_BASE_URL || "http://127.0.0.1:8000";
+          const url = `${baseURL}/auth/user/${user.id}`;
+          console.log(`Fetching user data from ${url}`);
+          const response = await fetch(url, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
+              ...(session?.user?.accessToken && {
+                Authorization: `Bearer ${session.user.accessToken}`,
+              }),
             },
+            credentials: "include",
           });
 
           if (!response.ok) {
-            throw new Error("Failed to fetch user data");
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           }
 
           const userData: User = await response.json();
-          setEffectiveRole(userData.role);
-          setEffectiveFarm(userData.farm || null);
+          const apiRole = userData.role || "user";
+          const apiFarm = userData.farm || null;
+          setEffectiveRole(apiRole);
+          setEffectiveFarm(apiFarm);
+          console.log("Using API data:", { role: apiRole, farm: apiFarm });
+          // Clear localStorage
+          localStorage.removeItem("userRole");
+          localStorage.removeItem("farm_name");
         }
       } catch (error: any) {
+        console.error("Fetch user data error:", error.message);
+        // Fall back to localStorage
+        const storedRole = localStorage.getItem("userRole") as User["role"] | null;
+        let storedFarm: User["farm"] | null = null;
+        const farmName = localStorage.getItem("farm_name");
+        if (farmName) {
+          try {
+            storedFarm = JSON.parse(farmName);
+            if (!storedFarm?.id || !storedFarm?.name || !storedFarm?.location) {
+              storedFarm = null;
+            }
+          } catch (e) {
+            storedFarm = null;
+          }
+        }
+        setEffectiveRole(storedRole || null); // Avoid defaulting to "user"
+        setEffectiveFarm(storedFarm);
+        console.log("Using localStorage fallback:", {
+          role: storedRole || null,
+          farm: storedFarm,
+        });
         setError(error.message || "Failed to fetch user data");
-        router.push("/auth/login");
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchUserData();
-  }, [user, status, router]);
+  }, [user, status, session?.user?.accessToken]);
 
-  // Separate effect for redirection logic
+  // Effect for redirection
   useEffect(() => {
-    if (isLoading || status === "loading") return; // Wait for loading to complete
-
-    console.log("Redirection check - role:", effectiveRole, "farm:", effectiveFarm);
-
-    if (!effectiveRole) {
-      console.log("No role found, redirecting to role selection");
-      router.push("/auth/role-selection");
-    } else if (effectiveRole === "owner" && !effectiveFarm) {
-      router.push("/auth/create-farm");
-    } else if (effectiveRole === "government") {
-      router.push("/government/dashboard");
-    } else if (effectiveRole === "worker" && !effectiveFarm) {
-      router.push("/auth/join-farm");
+    if (isLoading || status === "loading" || hasRedirected) {
+      console.log("Skipping redirect: isLoading, status loading, or hasRedirected");
+      return;
     }
-  }, [effectiveRole, effectiveFarm, isLoading, status, router]);
+
+    console.log("Redirect useEffect triggered:", {
+      user: user ? { id: user.id, email: user.email, role: user.role } : null,
+      effectiveRole,
+      effectiveFarm,
+      isLoading,
+      status,
+      pathname,
+    });
+
+    let targetPath: string | null = null;
+
+    // Redirect unauthenticated users to login
+    if (!user || status !== "authenticated") {
+      if (!pathname.startsWith("/auth") && pathname !== "/landing") {
+        targetPath = "/auth/login";
+      }
+    } else if (!effectiveRole && pathname !== "/auth/role-selection") {
+      targetPath = "/auth/role-selection";
+    } else if (
+      effectiveRole === "owner" &&
+      !effectiveFarm &&
+      pathname !== "/auth/create-farm"
+    ) {
+      targetPath = "/auth/create-farm";
+    } else if (
+      effectiveRole === "government" &&
+      !pathname.startsWith("/government/dashboard")
+    ) {
+      targetPath = "/government/dashboard";
+    } else if (
+      effectiveRole === "worker" &&
+      !effectiveFarm &&
+      pathname !== "/auth/join-farm"
+    ) {
+      targetPath = "/auth/join-farm";
+    }
+
+    if (targetPath) {
+      console.log(`Redirecting to ${targetPath}`);
+      setHasRedirected(true);
+      router.push(targetPath);
+      setTimeout(() => setHasRedirected(false), 1000);
+    }
+  }, [effectiveRole, effectiveFarm, isLoading, status, user, router, pathname, hasRedirected]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setError(null);
@@ -148,6 +231,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       await signOut({ redirect: false });
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("farm_name");
       router.push("/auth/login");
     } catch (error: any) {
       setError(error.message || "Logout failed");
@@ -160,6 +245,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUser = (userData: Partial<User>) => {
     console.log("User update requested:", userData);
+    if (userData.role) {
+      setEffectiveRole(userData.role);
+      localStorage.setItem("userRole", userData.role);
+    }
+    if (userData.farm) {
+      setEffectiveFarm(userData.farm);
+      localStorage.setItem("farm_name", JSON.stringify(userData.farm));
+    }
   };
 
   return (

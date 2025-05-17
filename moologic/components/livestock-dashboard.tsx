@@ -6,15 +6,27 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useTranslation } from "@/components/providers/language-provider"
 import { Plus } from "lucide-react"
-import Link from "next/link"
 import { LoadingScreen } from "@/components/loading-screen"
 import { AllAnimals } from "@/components/all-animals"
-import { useGetCattleDataQuery } from "@/lib/service/cattleService"
+import { useGetCattleDataQuery, usePostCattleMutation } from "@/lib/service/cattleService"
 import { useSession } from "next-auth/react"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
+import { useToast } from "@/components/ui/use-toast"
 
 export function LivestockDashboard() {
   const { t } = useTranslation()
   const { data: session } = useSession()
+  const { toast } = useToast()
   const accessToken = session?.user?.accessToken || ""
 
   // Fetch cattle data using RTK Query
@@ -24,7 +36,94 @@ export function LivestockDashboard() {
     error,
   } = useGetCattleDataQuery({ accessToken }, { skip: !accessToken })
 
+  // RTK mutation for posting new cattle
+  const [postCattle, { isLoading: isPosting }] = usePostCattleMutation()
+
   const [activeTab, setActiveTab] = useState("all")
+  const [open, setOpen] = useState(false)
+
+  // Form state for new animal
+  const [formData, setFormData] = useState({
+    breed: "",
+    birth_date: "",
+    gender: "female",
+    life_stage: "calf",
+    ear_tag_no: "",
+    dam_id: "",
+    sire_id: "",
+    is_purchased: false,
+    is_pregnant: false,
+    last_insemination_date: "",
+    last_calving_date: "",
+    expected_calving_date: "",
+    expected_insemination_date: "",
+    gestation_status: "not_pregnant",
+    health_status: "healthy",
+  })
+
+  // Handle form input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  // Handle select changes
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+      // Reset gestation_status if life_stage is changed to calf
+      ...(name === "life_stage" && value === "calf" ? { gestation_status: "not_pregnant", is_pregnant: false } : {}),
+    }))
+  }
+
+  // Handle checkbox changes
+  const handleCheckboxChange = (name: string, checked: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      [name]: checked,
+      // Reset gestation_status if is_pregnant is unchecked
+      ...(name === "is_pregnant" && !checked ? { gestation_status: "not_pregnant" } : {}),
+    }))
+  }
+
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      await postCattle({ accessToken, ...formData }).unwrap()
+      toast({
+        title: t("Success"),
+        description: t("New animal added successfully"),
+      })
+      setOpen(false)
+      // Reset form
+      setFormData({
+        breed: "",
+        birth_date: "",
+        gender: "female",
+        life_stage: "calf",
+        ear_tag_no: "",
+        dam_id: "",
+        sire_id: "",
+        is_purchased: false,
+        is_pregnant: false,
+        last_insemination_date: "",
+        last_calving_date: "",
+        expected_calving_date: "",
+        expected_insemination_date: "",
+        gestation_status: "not_pregnant",
+        health_status: "healthy",
+      })
+    } catch (err) {
+      console.error("Failed to add animal:", err)
+      toast({
+        title: t("Error"),
+        description: t("Failed to add new animal"),
+        variant: "destructive",
+      })
+    }
+  }
 
   // Handle loading and error states
   if (isLoading) {
@@ -48,6 +147,9 @@ export function LivestockDashboard() {
   const healthyCattle = cattle.filter((c: { health_status: string }) => c.health_status === "healthy").length
   const sickCattle = cattle.filter((c: { health_status: string }) => c.health_status === "sick").length
 
+  // Check if gestation status should be shown
+  const showGestationStatus = formData.is_pregnant && (formData.life_stage === "heifer" || formData.life_stage === "cow")
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -55,11 +157,137 @@ export function LivestockDashboard() {
           <h2 className="text-3xl font-bold tracking-tight">{t("Livestock Management")}</h2>
           <p className="text-muted-foreground">{t("Manage and monitor your entire herd from one place")}</p>
         </div>
-        <Link href="/livestock/add">
-          <Button className="mt-4 sm:mt-0">
-            <Plus className="mr-2 h-4 w-4" /> {t("Add New Animal")}
-          </Button>
-        </Link>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button className="mt-4 sm:mt-0">
+              <Plus className="mr-2 h-4 w-4" /> {t("Add New Animal")}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>{t("Add New Animal")}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="ear_tag_no">{t("Ear Tag Number")}</Label>
+                <Input
+                  id="ear_tag_no"
+                  name="ear_tag_no"
+                  value={formData.ear_tag_no}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="breed">{t("Breed")}</Label>
+                <Input
+                  id="breed"
+                  name="breed"
+                  value={formData.breed}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div>
+                <Label htmlFor="birth_date">{t("Birth Date")}</Label>
+                <Input
+                  id="birth_date"
+                  name="birth_date"
+                  type="date"
+                  value={formData.birth_date}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div>
+                <Label htmlFor="gender">{t("Gender")}</Label>
+                <Select
+                  name="gender"
+                  value={formData.gender}
+                  onValueChange={(value) => handleSelectChange("gender", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("Select gender")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">{t("Male")}</SelectItem>
+                    <SelectItem value="female">{t("Female")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="life_stage">{t("Life Stage")}</Label>
+                <Select
+                  name="life_stage"
+                  value={formData.life_stage}
+                  onValueChange={(value) => handleSelectChange("life_stage", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("Select life stage")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="calf">{t("Calf")}</SelectItem>
+                    <SelectItem value="heifer">{t("Heifer")}</SelectItem>
+                    <SelectItem value="cow">{t("Cow")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="health_status">{t("Health Status")}</Label>
+                <Select
+                  name="health_status"
+                  value={formData.health_status}
+                  onValueChange={(value) => handleSelectChange("health_status", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("Select health status")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="healthy">{t("Healthy")}</SelectItem>
+                    <SelectItem value="sick">{t("Sick")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_purchased"
+                  checked={formData.is_purchased}
+                  onCheckedChange={(checked) => handleCheckboxChange("is_purchased", checked as boolean)}
+                />
+                <Label htmlFor="is_purchased">{t("Is Purchased")}</Label>
+              </div>
+              {(formData.life_stage === "heifer" || formData.life_stage === "cow") && (
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="is_pregnant"
+                    checked={formData.is_pregnant}
+                    onCheckedChange={(checked) => handleCheckboxChange("is_pregnant", checked as boolean)}
+                  />
+                  <Label htmlFor="is_pregnant">{t("Is Pregnant")}</Label>
+                </div>
+              )}
+              {showGestationStatus && (
+                <div>
+                  <Label htmlFor="gestation_status">{t("Gestation Status")}</Label>
+                  <Select
+                    name="gestation_status"
+                    value={formData.gestation_status}
+                    onValueChange={(value) => handleSelectChange("gestation_status", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t("Select gestation status")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="not_pregnant">{t("Not Pregnant")}</SelectItem>
+                      <SelectItem value="pregnant">{t("Pregnant")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <Button type="submit" disabled={isPosting}>
+                {isPosting ? t("Adding...") : t("Add Animal")}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

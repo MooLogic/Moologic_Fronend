@@ -9,6 +9,7 @@ function isTokenExpired(token: string): boolean {
     const { exp } = jwtDecode<{ exp: number }>(token);
     return Date.now() >= exp * 1000;
   } catch (e) {
+    console.error("Error decoding token:", e);
     return true;
   }
 }
@@ -16,7 +17,9 @@ function isTokenExpired(token: string): boolean {
 // Utility: Refresh the access token
 async function refreshAccessToken(token: any) {
   try {
-    const res = await fetch("http://127.0.0.1:8000/auth/refresh-token/", {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://127.0.0.1:8000";
+    console.log("Refreshing token at:", `${baseUrl}/auth/refresh-token/`);
+    const res = await fetch(`${baseUrl}/auth/refresh-token/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refresh_token: token.refreshToken }),
@@ -25,12 +28,14 @@ async function refreshAccessToken(token: any) {
     const data = await res.json();
 
     if (!res.ok || !data.access_token) {
-      throw new Error("Refresh failed");
+      throw new Error(`Refresh failed: HTTP ${res.status}`);
     }
 
+    console.log("Token refreshed successfully");
     return {
       ...token,
       accessToken: data.access_token,
+      error: null,
     };
   } catch (err) {
     console.error("Error refreshing access token:", err);
@@ -50,40 +55,61 @@ export const authOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
-
-        const res = await fetch("http://127.0.0.1:8000/auth/login/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: credentials.email,
-            password: credentials.password,
-          }),
-        });
-
-        const data = await res.json();
-
-        if (res.ok && data.access_token && data.user) {
-          
-          //delete farm_name and userRole from local storage
-          
-          return {
-            id: data.user.id,
-            email: data.user.email,
-            name: data.user.username,
-            role: data.user.role,
-            farm: data.user.farm,
-            accessToken: data.access_token,
-            refreshToken: data.refresh_token,
-          };
+        if (!credentials?.email || !credentials?.password) {
+          console.error("Missing credentials");
+          return null;
         }
 
-        return null;
+        try {
+          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://127.0.0.1:8000";
+          console.log("Attempting login at:", `${baseUrl}/auth/login/`);
+          const res = await fetch(`${baseUrl}/auth/login/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: credentials.email,
+              password: credentials.password,
+            }),
+          });
+
+          const data = await res.json();
+
+          if (res.ok && data.access_token && data.user) {
+            // Clear localStorage
+            if (typeof window !== "undefined") {
+              localStorage.removeItem("userRole");
+              localStorage.removeItem("farm_name");
+              console.log("Cleared localStorage: userRole, farm_name");
+            }
+
+            console.log("Login successful for user:", data.user.email);
+            return {
+              id: data.user.id,
+              email: data.user.email,
+              name: data.user.username,
+              role: data.user.role || "user",
+              farm: data.user.farm || null,
+              accessToken: data.access_token,
+              refreshToken: data.refresh_token,
+            };
+          }
+
+          console.error("Login failed:", data);
+          return null;
+        } catch (err) {
+          console.error("Error in authorize:", err);
+          return null;
+        }
       },
     }),
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      authorization: {
+        params: {
+          scope: "openid email profile",
+        },
+      },
     }),
   ],
   session: {
@@ -94,25 +120,26 @@ export const authOptions = {
     async jwt({ token, user }: { token: any; user?: any }) {
       // Initial sign-in
       if (user) {
+        console.log("Initial sign-in for user:", user.email);
         return {
           ...token,
           id: user.id,
-          role: user.role,
-          farm: user.farm,
+          role: user.role || "user",
+          farm: user.farm || null,
           name: user.name,
           accessToken: user.accessToken,
           refreshToken: user.refreshToken,
         };
       }
 
-      // On subsequent requests, check if accessToken is expired
-      if (isTokenExpired(token.accessToken)) {
+      // Check if accessToken is expired
+      if (token.accessToken && isTokenExpired(token.accessToken)) {
+        console.log("Access token expired, refreshing...");
         return await refreshAccessToken(token);
       }
 
       return token;
     },
-
     async session({ session, token }: { session: any; token: any }) {
       if (session.user) {
         session.user.id = token.id;
@@ -129,7 +156,7 @@ export const authOptions = {
     signIn: "/auth/login",
     error: "/auth/error",
   },
-  secret: process.env.NEXTAUTH_SECRET || "mNzzK3uJwbfTYLRr7OIY2qiIrm+n3ccUCTbDRKAgKf4=",
+  secret: process.env.NEXTAUTH_SECRET,
 };
 
 const handler = NextAuth(authOptions);

@@ -47,7 +47,7 @@ export const cattleApi = createApi({
                 gestation_status: string;
                 health_status: string;
             }) => ({
-                url: '/core/cattle',
+                url: '/core/cattle/create/',
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${data.accessToken}`,
