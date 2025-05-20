@@ -24,10 +24,10 @@ export function AnimalDetails({ animal }) {
             <div className="rounded-lg overflow-hidden">
               <img
                 src={animal.image || "/placeholder.svg?height=400&width=600"}
-                alt={`Animal ${animal.earTag}`}
+                alt={`Animal ${animal.ear_tag_no}`}
                 className="w-full h-[200px] object-cover"
               />
-              <div className="text-xs text-center mt-1 text-gray-500">© PONI CAMERA</div>
+             
             </div>
 
             {/* Basic Information */}

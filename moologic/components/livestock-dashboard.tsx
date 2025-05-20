@@ -1,12 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useTranslation } from "@/components/providers/language-provider"
 import { Plus } from "lucide-react"
-import { LoadingScreen } from "@/components/loading-screen"
 import { AllAnimals } from "@/components/all-animals"
 import { useGetCattleDataQuery, usePostCattleMutation } from "@/lib/service/cattleService"
 import { useSession } from "next-auth/react"
@@ -22,6 +21,40 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/components/ui/use-toast"
+import { Skeleton } from "@/components/ui/skeleton"
+
+// Skeleton component for animal list
+const AnimalListSkeleton = () => (
+  <div className="space-y-4">
+    {[...Array(5)].map((_, index) => (
+      <Card key={index}>
+        <CardContent className="pt-6">
+          <div className="flex items-center space-x-4">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-4 w-[200px]" />
+              <Skeleton className="h-4 w-[150px]" />
+            </div>
+            <Skeleton className="h-8 w-[100px]" />
+          </div>
+        </CardContent>
+      </Card>
+    ))}
+  </div>
+)
+
+// Skeleton component for statistics cards
+const StatsCardSkeleton = () => (
+  <Card>
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <Skeleton className="h-4 w-[100px]" />
+    </CardHeader>
+    <CardContent>
+      <Skeleton className="h-8 w-[50px]" />
+      <Skeleton className="h-3 w-[150px] mt-2" />
+    </CardContent>
+  </Card>
+)
 
 export function LivestockDashboard() {
   const { t } = useTranslation()
@@ -33,7 +66,9 @@ export function LivestockDashboard() {
   const {
     data: cattleData,
     isLoading,
+    isFetching,
     error,
+    refetch,
   } = useGetCattleDataQuery({ accessToken }, { skip: !accessToken })
 
   // RTK mutation for posting new cattle
@@ -41,6 +76,7 @@ export function LivestockDashboard() {
 
   const [activeTab, setActiveTab] = useState("all")
   const [open, setOpen] = useState(false)
+  const [showSkeleton, setShowSkeleton] = useState(false)
 
   // Form state for new animal
   const [formData, setFormData] = useState({
@@ -52,14 +88,20 @@ export function LivestockDashboard() {
     dam_id: "",
     sire_id: "",
     is_purchased: false,
-    is_pregnant: false,
-    last_insemination_date: "",
-    last_calving_date: "",
-    expected_calving_date: "",
-    expected_insemination_date: "",
     gestation_status: "not_pregnant",
     health_status: "healthy",
   })
+
+  // Debug fetch states
+  useEffect(() => {
+    console.log("Fetch State:", {
+      isLoading,
+      isFetching,
+      showSkeleton,
+      cattleDataLength: cattleData?.results?.length,
+      cattleData: cattleData?.results,
+    })
+  }, [isLoading, isFetching, showSkeleton, cattleData])
 
   // Handle form input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -73,25 +115,53 @@ export function LivestockDashboard() {
       ...prev,
       [name]: value,
       // Reset gestation_status if life_stage is changed to calf
-      ...(name === "life_stage" && value === "calf" ? { gestation_status: "not_pregnant", is_pregnant: false } : {}),
+      ...(name === "life_stage" && value === "calf" ? { gestation_status: "not_pregnant" } : {}),
     }))
   }
 
   // Handle checkbox changes
   const handleCheckboxChange = (name: string, checked: boolean) => {
-    setFormData((prev) => ({
-      ...prev,
-      [name]: checked,
-      // Reset gestation_status if is_pregnant is unchecked
-      ...(name === "is_pregnant" && !checked ? { gestation_status: "not_pregnant" } : {}),
-    }))
+    setFormData((prev) => ({ ...prev, [name]: checked }))
   }
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validate and format birth_date
+    let formattedBirthDate: string | undefined = undefined
+    if (formData.birth_date) {
+      const date = new Date(formData.birth_date)
+      if (isNaN(date.getTime())) {
+        toast({
+          title: t("Error"),
+          description: t("Invalid birth date format. Please use YYYY-MM-DD."),
+          variant: "destructive",
+        })
+        return
+      }
+      formattedBirthDate = date.toISOString().split("T")[0]
+    }
+
+    // Prepare payload
+    const payload = {
+      breed: formData.breed || undefined,
+      birth_date: formattedBirthDate,
+      gender: formData.gender,
+      life_stage: formData.life_stage,
+      ear_tag_no: formData.ear_tag_no,
+      dam_id: formData.dam_id || undefined,
+      sire_id: formData.sire_id || undefined,
+      is_purchased: formData.is_purchased,
+      gestation_status: formData.gestation_status,
+      health_status: formData.health_status,
+    }
+
     try {
-      await postCattle({ accessToken, ...formData }).unwrap()
+      console.log("Submitting payload:", payload)
+      setShowSkeleton(true) // Show skeleton during POST and refetch
+      const response = await postCattle({ accessToken, ...payload }).unwrap()
+      console.log("Post successful, response:", response)
       toast({
         title: t("Success"),
         description: t("New animal added successfully"),
@@ -107,29 +177,32 @@ export function LivestockDashboard() {
         dam_id: "",
         sire_id: "",
         is_purchased: false,
-        is_pregnant: false,
-        last_insemination_date: "",
-        last_calving_date: "",
-        expected_calving_date: "",
-        expected_insemination_date: "",
         gestation_status: "not_pregnant",
         health_status: "healthy",
       })
-    } catch (err) {
+      // Force refetch to ensure sync
+      refetch()
+    } catch (err: any) {
       console.error("Failed to add animal:", err)
+      let errorMessage = t("Failed to add new animal")
+      if (err.data) {
+        const errors = Object.entries(err.data)
+          .map(([field, messages]: [string, any]) => `${field}: ${messages.join(", ")}`)
+          .join("; ")
+        errorMessage = errors || errorMessage
+      }
       toast({
         title: t("Error"),
-        description: t("Failed to add new animal"),
+        description: errorMessage,
         variant: "destructive",
       })
+    } finally {
+      // Keep skeleton for at least 1s to cover refetch
+      setTimeout(() => setShowSkeleton(false), 1000)
     }
   }
 
   // Handle loading and error states
-  if (isLoading) {
-    return <LoadingScreen />
-  }
-
   if (error) {
     console.error("Failed to load cattle data:", error)
     return <div className="text-red-500">{t("Failed to load cattle data")}</div>
@@ -148,7 +221,7 @@ export function LivestockDashboard() {
   const sickCattle = cattle.filter((c: { health_status: string }) => c.health_status === "sick").length
 
   // Check if gestation status should be shown
-  const showGestationStatus = formData.is_pregnant && (formData.life_stage === "heifer" || formData.life_stage === "cow")
+  const showGestationStatus = formData.life_stage === "heifer" || formData.life_stage === "cow"
 
   return (
     <div className="space-y-4">
@@ -254,16 +327,6 @@ export function LivestockDashboard() {
                 />
                 <Label htmlFor="is_purchased">{t("Is Purchased")}</Label>
               </div>
-              {(formData.life_stage === "heifer" || formData.life_stage === "cow") && (
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="is_pregnant"
-                    checked={formData.is_pregnant}
-                    onCheckedChange={(checked) => handleCheckboxChange("is_pregnant", checked as boolean)}
-                  />
-                  <Label htmlFor="is_pregnant">{t("Is Pregnant")}</Label>
-                </div>
-              )}
               {showGestationStatus && (
                 <div>
                   <Label htmlFor="gestation_status">{t("Gestation Status")}</Label>
@@ -291,48 +354,59 @@ export function LivestockDashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("Total Cattle")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalCattle}</div>
-            <p className="text-xs text-muted-foreground">{t("Total number of animals in your herd")}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("Female / Male")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {femaleCattle} / {maleCattle}
-            </div>
-            <p className="text-xs text-muted-foreground">{t("Distribution of female and male animals")}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("Pregnant / Calving")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {pregnantCattle} / {calvingCattle}
-            </div>
-            <p className="text-xs text-muted-foreground">{t("Number of pregnant and calving animals")}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("Healthy / Sick")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {healthyCattle} / {sickCattle}
-            </div>
-            <p className="text-xs text-muted-foreground">{t("Health status of your herd")}</p>
-          </CardContent>
-        </Card>
+        {isLoading || isFetching || showSkeleton ? (
+          <>
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+          </>
+        ) : (
+          <>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{t("Total Cattle")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{totalCattle}</div>
+                <p className="text-xs text-muted-foreground">{t("Total number of animals in your herd")}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{t("Female / Male")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {femaleCattle} / {maleCattle}
+                </div>
+                <p className="text-xs text-muted-foreground">{t("Distribution of female and male animals")}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{t("Pregnant / Calving")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {pregnantCattle} / {calvingCattle}
+                </div>
+                <p className="text-xs text-muted-foreground">{t("Number of pregnant and calving animals")}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{t("Healthy / Sick")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {healthyCattle} / {sickCattle}
+                </div>
+                <p className="text-xs text-muted-foreground">{t("Health status of your herd")}</p>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
 
       <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
@@ -350,7 +424,11 @@ export function LivestockDashboard() {
               <CardDescription>{t("View and manage all animals in your herd")}</CardDescription>
             </CardHeader>
             <CardContent>
-              <AllAnimals animals={cattle} showFilters={true} />
+              {isLoading || isFetching || showSkeleton ? (
+                <AnimalListSkeleton />
+              ) : (
+                <AllAnimals animals={cattle} showFilters={true} />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -361,7 +439,11 @@ export function LivestockDashboard() {
               <CardDescription>{t("View and manage all cows in your herd")}</CardDescription>
             </CardHeader>
             <CardContent>
-              <AllAnimals animals={cattle.filter((c: { life_stage: string }) => c.life_stage === "cow")} showFilters={false} />
+              {isLoading || isFetching || showSkeleton ? (
+                <AnimalListSkeleton />
+              ) : (
+                <AllAnimals animals={cattle.filter((c: { life_stage: string }) => c.life_stage === "cow")} showFilters={false} />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -372,7 +454,11 @@ export function LivestockDashboard() {
               <CardDescription>{t("View and manage all heifers in your herd")}</CardDescription>
             </CardHeader>
             <CardContent>
-              <AllAnimals animals={cattle.filter((c: { life_stage: string }) => c.life_stage === "heifer")} showFilters={false} />
+              {isLoading || isFetching || showSkeleton ? (
+                <AnimalListSkeleton />
+              ) : (
+                <AllAnimals animals={cattle.filter((c: { life_stage: string }) => c.life_stage === "heifer")} showFilters={false} />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -383,7 +469,11 @@ export function LivestockDashboard() {
               <CardDescription>{t("View and manage all calves in your herd")}</CardDescription>
             </CardHeader>
             <CardContent>
-              <AllAnimals animals={cattle.filter((c: { life_stage: string }) => c.life_stage === "calf")} showFilters={false} />
+              {isLoading || isFetching || showSkeleton ? (
+                <AnimalListSkeleton />
+              ) : (
+                <AllAnimals animals={cattle.filter((c: { life_stage: string }) => c.life_stage === "calf")} showFilters={false} />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -394,7 +484,11 @@ export function LivestockDashboard() {
               <CardDescription>{t("View and manage all bulls in your herd")}</CardDescription>
             </CardHeader>
             <CardContent>
-              <AllAnimals animals={cattle.filter((c: { life_stage: string }) => c.life_stage === "bull")} showFilters={false} />
+              {isLoading || isFetching || showSkeleton ? (
+                <AnimalListSkeleton />
+              ) : (
+                <AllAnimals animals={cattle.filter((c: { life_stage: string }) => c.life_stage === "bull")} showFilters={false} />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
