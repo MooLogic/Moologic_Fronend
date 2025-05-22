@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -13,71 +13,109 @@ import { Upload, Camera, AlertCircle, CheckCircle, Loader2 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { useDispatch } from "react-redux"
 import { setPrediction } from "@/redux/features/disease/diseaseSlice"
+import axios from "axios"
+import { useSession } from "next-auth/react"
 
-// Sample disease symptoms data
+// Updated disease symptoms data from the provided list
 const diseaseSymptoms = [
-  { id: "fever", label: "Fever" },
+  { id: "anorexia", label: "Anorexia" },
+  { id: "abdominal_pain", label: "Abdominal Pain" },
+  { id: "anaemia", label: "Anaemia" },
+  { id: "abortions", label: "Abortions" },
+  { id: "acetone", label: "Acetone" },
+  { id: "aggression", label: "Aggression" },
+  { id: "arthrogyposis", label: "Arthrogyposis" },
+  { id: "ankylosis", label: "Ankylosis" },
+  { id: "anxiety", label: "Anxiety" },
+  { id: "bellowing", label: "Bellowing" },
+  { id: "blood_loss", label: "Blood Loss" },
+  { id: "blood_poisoning", label: "Blood Poisoning" },
+  { id: "blisters", label: "Blisters" },
+  { id: "colic", label: "Colic" },
+  { id: "condemnation_of_livers", label: "Condemnation of Livers" },
+  { id: "conjunctivae", label: "Conjunctivae Issues" },
   { id: "coughing", label: "Coughing" },
-  { id: "nasal_discharge", label: "Nasal Discharge" },
-  { id: "difficulty_breathing", label: "Difficulty Breathing" },
-  { id: "diarrhea", label: "Diarrhea" },
-  { id: "reduced_appetite", label: "Reduced Appetite" },
-  { id: "weight_loss", label: "Weight Loss" },
-  { id: "lethargy", label: "Lethargy" },
+  { id: "depression", label: "Depression" },
+  { id: "discomfort", label: "Discomfort" },
+  { id: "dyspnea", label: "Dyspnea" },
+  { id: "dysentery", label: "Dysentery" },
+  { id: "diarrhoea", label: "Diarrhoea" },
+  { id: "dehydration", label: "Dehydration" },
+  { id: "drooling", label: "Drooling" },
+  { id: "dull", label: "Dullness" },
+  { id: "decreased_fertility", label: "Decreased Fertility" },
+  { id: "diffculty_breath", label: "Difficulty Breathing" },
+  { id: "emaciation", label: "Emaciation" },
+  { id: "encephalitis", label: "Encephalitis" },
+  { id: "fever", label: "Fever" },
+  { id: "facial_paralysis", label: "Facial Paralysis" },
+  { id: "frothing_of_mouth", label: "Frothing of Mouth" },
+  { id: "frothing", label: "Frothing" },
+  { id: "gaseous_stomach", label: "Gaseous Stomach" },
+  { id: "highly_diarrhoea", label: "Highly Severe Diarrhoea" },
+  { id: "high_pulse_rate", label: "High Pulse Rate" },
+  { id: "high_temp", label: "High Temperature" },
+  { id: "high_proportion", label: "High Proportion" },
+  { id: "hyperaemia", label: "Hyperaemia" },
+  { id: "hydrocephalus", label: "Hydrocephalus" },
+  { id: "isolation_from_herd", label: "Isolation from Herd" },
+  { id: "infertility", label: "Infertility" },
+  { id: "intermittent_fever", label: "Intermittent Fever" },
+  { id: "jaundice", label: "Jaundice" },
+  { id: "ketosis", label: "Ketosis" },
+  { id: "loss_of_appetite", label: "Loss of Appetite" },
   { id: "lameness", label: "Lameness" },
-  { id: "swollen_joints", label: "Swollen Joints" },
-  { id: "skin_lesions", label: "Skin Lesions" },
+  { id: "lack_of_coordination", label: "Lack of Coordination" },
+  { id: "lethargy", label: "Lethargy" },
+  { id: "lacrimation", label: "Lacrimation" },
+  { id: "milk_flakes", label: "Milk Flakes" },
+  { id: "milk_watery", label: "Watery Milk" },
+  { id: "milk_clots", label: "Milk Clots" },
+  { id: "mild_diarrhoea", label: "Mild Diarrhoea" },
+  { id: "moaning", label: "Moaning" },
+  { id: "mucosal_lesions", label: "Mucosal Lesions" },
+  { id: "milk_fever", label: "Milk Fever" },
+  { id: "nausea", label: "Nausea" },
+  { id: "nasel_discharges", label: "Nasal Discharges" },
+  { id: "oedema", label: "Oedema" },
+  { id: "pain", label: "Pain" },
+  { id: "painful_tongue", label: "Painful Tongue" },
+  { id: "pneumonia", label: "Pneumonia" },
+  { id: "photo_sensitization", label: "Photosensitization" },
+  { id: "quivering_lips", label: "Quivering Lips" },
+  { id: "reduction_milk_yields", label: "Reduction in Milk Yields" },
+  { id: "rapid_breathing", label: "Rapid Breathing" },
+  { id: "rumenstasis", label: "Rumen Stasis" },
+  { id: "reduced_rumination", label: "Reduced Rumination" },
+  { id: "reduced_fertility", label: "Reduced Fertility" },
+  { id: "reduced_fat", label: "Reduced Fat" },
+  { id: "reduces_feed_intake", label: "Reduced Feed Intake" },
+  { id: "raised_breathing", label: "Raised Breathing" },
+  { id: "stomach_pain", label: "Stomach Pain" },
+  { id: "salivation", label: "Salivation" },
+  { id: "stillbirths", label: "Stillbirths" },
+  { id: "shallow_breathing", label: "Shallow Breathing" },
+  { id: "swollen_pharyngeal", label: "Swollen Pharyngeal" },
+  { id: "swelling", label: "Swelling" },
+  { id: "saliva", label: "Excessive Saliva" },
+  { id: "swollen_tongue", label: "Swollen Tongue" },
+  { id: "tachycardia", label: "Tachycardia" },
+  { id: "torticollis", label: "Torticollis" },
   { id: "udder_swelling", label: "Udder Swelling" },
-  { id: "abnormal_milk", label: "Abnormal Milk" },
-  { id: "eye_discharge", label: "Eye Discharge" },
-  { id: "excessive_salivation", label: "Excessive Salivation" },
+  { id: "udder_heat", label: "Udder Heat" },
+  { id: "udder_hardness", label: "Udder Hardness" },
+  { id: "udder_redness", label: "Udder Redness" },
+  { id: "udder_pain", label: "Udder Pain" },
+  { id: "unwillingness_to_move", label: "Unwillingness to Move" },
+  { id: "ulcers", label: "Ulcers" },
+  { id: "vomiting", label: "Vomiting" },
+  { id: "weight_loss", label: "Weight Loss" },
+  { id: "weakness", label: "Weakness" },
+  { id: "prognosis", label: "Poor Prognosis" },
 ]
 
-// Sample disease prediction results
-const diseasePredictions = {
-  "fever,coughing,nasal_discharge,difficulty_breathing": {
-    disease: "Bovine Respiratory Disease (BRD)",
-    confidence: 92,
-    description:
-      "BRD is a complex of diseases characterized by inflammation of the respiratory tract. It's one of the most common and economically significant diseases in cattle.",
-    treatment:
-      "Antibiotics (e.g., florfenicol, tulathromycin), anti-inflammatory drugs, and supportive care. Isolation of affected animals is recommended.",
-    prevention: "Vaccination, proper ventilation, stress reduction, and good management practices.",
-  },
-  "diarrhea,reduced_appetite,weight_loss": {
-    disease: "Bovine Viral Diarrhea (BVD)",
-    confidence: 85,
-    description:
-      "BVD is a viral disease that affects the digestive and reproductive systems of cattle. It can cause a range of symptoms from mild to severe.",
-    treatment:
-      "Supportive care, fluid therapy, and antibiotics for secondary bacterial infections. No specific antiviral treatment exists.",
-    prevention: "Vaccination, testing and removal of persistently infected animals, and biosecurity measures.",
-  },
-  "udder_swelling,abnormal_milk,fever": {
-    disease: "Mastitis",
-    confidence: 95,
-    description:
-      "Mastitis is an inflammation of the mammary gland and udder tissue, usually caused by bacterial infection. It's one of the most common diseases in dairy cattle.",
-    treatment:
-      "Intramammary antibiotics, systemic antibiotics for severe cases, frequent milking of affected quarters, and anti-inflammatory drugs.",
-    prevention: "Proper milking hygiene, regular teat dipping, dry cow therapy, and maintaining clean housing.",
-  },
-  "lameness,swollen_joints,fever": {
-    disease: "Foot and Mouth Disease",
-    confidence: 88,
-    description:
-      "Foot and mouth disease is a highly contagious viral disease affecting cloven-hoofed animals. It causes fever and blisters on the mouth, feet, and teats.",
-    treatment: "No specific treatment. Supportive care and pain management.",
-    prevention: "Strict biosecurity, vaccination in endemic areas, and immediate reporting to authorities.",
-  },
-  "skin_lesions,fever,reduced_appetite": {
-    disease: "Lumpy Skin Disease",
-    confidence: 90,
-    description:
-      "Lumpy skin disease is a viral disease characterized by fever and nodules on the skin. It's transmitted by biting insects.",
-    treatment: "Supportive care, antibiotics for secondary infections, and anti-inflammatory drugs.",
-    prevention: "Vaccination, insect control, and quarantine of affected animals.",
-  },
+// Sample disease predictions for image-based fallback (since no image API provided)
+const fallbackDiseasePredictions = {
   default: {
     disease: "Unknown Condition",
     confidence: 0,
@@ -95,14 +133,20 @@ export function DiseasePrediction() {
   const dispatch = useDispatch()
 
   const [activeTab, setActiveTab] = useState("symptoms")
-  const [selectedSymptoms, setSelectedSymptoms] = useState([])
+  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([])
   const [imageFile, setImageFile] = useState(null)
-  const [imagePreview, setImagePreview] = useState(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [predictionResult, setPredictionResult] = useState(null)
+  const [predictionResult, setPredictionResult] = useState<{
+    disease: string
+    confidence: number
+    description: string
+    treatment: string
+    prevention: string
+  } | null>(null)
 
   // Handle symptom selection
-  const handleSymptomChange = (symptomId) => {
+  const handleSymptomChange = (symptomId: string) => {
     setSelectedSymptoms((prev) => {
       if (prev.includes(symptomId)) {
         return prev.filter((id) => id !== symptomId)
@@ -113,13 +157,14 @@ export function DiseasePrediction() {
   }
 
   // Handle image upload
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0]
-    if (file) {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files && files[0]) {
+      const file = files[0]
       setImageFile(file)
       const reader = new FileReader()
       reader.onloadend = () => {
-        setImagePreview(reader.result)
+        setImagePreview(typeof reader.result === "string" ? reader.result : null)
       }
       reader.readAsDataURL(file)
     }
@@ -127,15 +172,16 @@ export function DiseasePrediction() {
 
   // Handle camera capture
   const handleCameraCapture = () => {
-    // In a real implementation, this would access the device camera
     toast({
       title: "Camera Access",
       description: "Camera functionality would be implemented here in a production environment.",
     })
   }
 
-  // Predict disease based on symptoms
-  const predictDiseaseFromSymptoms = () => {
+  // Predict disease based on symptoms using API
+  const { data: session } = useSession()
+  const   base_url = "http://127.0.0.1:8000/"
+  const predictDiseaseFromSymptoms = async () => {
     if (selectedSymptoms.length === 0) {
       toast({
         title: "No Symptoms Selected",
@@ -147,18 +193,39 @@ export function DiseasePrediction() {
 
     setIsAnalyzing(true)
 
-    // Simulate API call with timeout
-    setTimeout(() => {
-      const symptomKey = selectedSymptoms.sort().join(",")
-      const result = diseasePredictions[symptomKey] || diseasePredictions.default
+    try {
+      const response = await axios.post(
+        base_url+"health/disease_prediction/",
+        { symptoms: selectedSymptoms },
+        {
+          headers: {
+            Authorization: `Bearer ${session?.user.accessToken}`, // Adjust based on your auth mechanism
+          },
+        }
+      )
 
+      const result = response.data.predicted_disease || fallbackDiseasePredictions.default
       setPredictionResult(result)
       dispatch(setPrediction(result))
+    } catch (error) {
+      let errorMessage = "Failed to fetch prediction from server.";
+      if (typeof error === "object" && error !== null && "response" in error) {
+        const err = error as { response?: { data?: { error?: string } } };
+        errorMessage = err.response?.data?.error || errorMessage;
+      }
+      toast({
+        title: "Prediction Error",
+        description: errorMessage,
+        variant: "destructive",
+      })
+      setPredictionResult(fallbackDiseasePredictions.default)
+      dispatch(setPrediction(fallbackDiseasePredictions.default))
+    } finally {
       setIsAnalyzing(false)
-    }, 2000)
+    }
   }
 
-  // Predict disease from image
+  // Predict disease from image (simulated, as no image API provided)
   const predictDiseaseFromImage = () => {
     if (!imageFile) {
       toast({
@@ -171,14 +238,11 @@ export function DiseasePrediction() {
 
     setIsAnalyzing(true)
 
-    // Simulate API call with timeout
+    // Simulate API call with timeout (replace with actual image-based API if available)
     setTimeout(() => {
-      // For demo purposes, we'll return a random disease prediction
-      const predictions = Object.values(diseasePredictions).filter((p) => p.disease !== "Unknown Condition")
-      const randomPrediction = predictions[Math.floor(Math.random() * predictions.length)]
-
-      setPredictionResult(randomPrediction)
-      dispatch(setPrediction(randomPrediction))
+      const result = fallbackDiseasePredictions.default
+      setPredictionResult(result)
+      dispatch(setPrediction(result))
       setIsAnalyzing(false)
     }, 3000)
   }
@@ -299,7 +363,10 @@ export function DiseasePrediction() {
                               {!imagePreview && (
                                 <Button
                                   variant="outline"
-                                  onClick={() => document.getElementById("image-upload").click()}
+                                  onClick={() => {
+                                    const input = document.getElementById("image-upload");
+                                    if (input) (input as HTMLInputElement).click();
+                                  }}
                                 >
                                   <Upload className="h-4 w-4 mr-2" />
                                   {t("Browse Files")}
@@ -464,7 +531,18 @@ export function DiseasePrediction() {
   )
 }
 
-function PredictionResult({ result, onReset }) {
+type PredictionResultProps = {
+  result: {
+    disease: string
+    confidence: number
+    description: string
+    treatment: string
+    prevention: string
+  }
+  onReset: () => void
+}
+
+function PredictionResult({ result, onReset }: PredictionResultProps) {
   const { t } = useTranslation()
 
   return (
@@ -525,4 +603,3 @@ function PredictionResult({ result, onReset }) {
     </motion.div>
   )
 }
-
