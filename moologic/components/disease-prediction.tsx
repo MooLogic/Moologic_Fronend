@@ -25,23 +25,98 @@ interface PredictionResultType {
 
 // Sample disease symptoms data
 const diseaseSymptoms = [
-  { id: "fever", label: "Fever" },
-  { id: "coughing", label: "Coughing" },
-  { id: "nasal_discharge", label: "Nasal Discharge" },
-  { id: "difficulty_breathing", label: "Difficulty Breathing" },
-  { id: "diarrhea", label: "Diarrhea" },
-  { id: "reduced_appetite", label: "Reduced Appetite" },
-  { id: "weight_loss", label: "Weight Loss" },
-  { id: "lethargy", label: "Lethargy" },
-  { id: "lameness", label: "Lameness" },
-  { id: "swollen_joints", label: "Swollen Joints" },
-  { id: "skin_lesions", label: "Skin Lesions" },
-  { id: "udder_swelling", label: "Udder Swelling" },
-  { id: "abnormal_milk", label: "Abnormal Milk" },
-  { id: "eye_discharge", label: "Eye Discharge" },
-  { id: "excessive_salivation", label: "Excessive Salivation" },
+   { id: "anorexia", label: "anorexia" },
+   { id: "abdominal_pain", label: "abdominal Pain" },
+   { id: "anaemia", label: "anaemia" },
+   { id: "abortions", label: "abortions" },
+   { id: "acetone", label: "acetone" },
+   { id: "aggression", label: "aggression" },
+   { id: "arthrogyposis", label: "arthrogyposis" },
+   { id: "anxiety", label: "anxiety" },
+   { id: "bellowing", label: "bellowing" },
+   { id: "blood_loss", label: "blood_loss" },
+   { id: "blood_poisoning", label: "blood_poisoning" },
+   { id: " blisters", label: "blisters" },
+   { id: "colic", label: "colic" },
+   { id: "Condemnation_of_livers", label: "condemnation_of_livers" },
+   { id: "conjunctivae", label: "conjunctivae" },
+   { id: "coughing", label: "coughing" },
+   { id: "depression", label: "depression" },
+   { id: "discomfort	", label: "discomfort	" },
+   { id: "dyspnea", label: "dyspnea" },
+   { id: "	dysentery", label: "dysentery" },
+   { id: "diarrhoea", label: "diarrhoea" },
+   { id: "dehydration", label: "dehydration" },
+   { id: "drooling", label: "drooling" },
+   { id: "decreased_fertility", label: "decreased_fertility" },
+   { id: "diffculty_breath", label: "diffculty_breath" },
+   { id: "emaciation", label: "emaciation" },
+   { id: "encephalitis", label: "encephalitis" },
+   { id: "fever", label: "Fever" },
+   { id: "facial_paralysis", label: "facial_paralysis" },
+   { id: "frothing_of_mouth", label: "frothing_of_mouth" },
+   { id: "gaseous_stomach", label: "gaseous_stomach" },
+   { id: "highly_diarrhoea", label: "highly_diarrhoea" },
+   { id: "high_pulse_rate", label: "high_pulse_rate" },
+   { id: "high_temp", label: "high_temp" },
+   { id: "high_proportion", label: "high_proportion" },
+   { id: "hyperaemia", label: "	hyperaemia" },
+   { id: "hydrocephalus", label: "hydrocephalus" },
+   { id: "isolation_from_herd", label: "isolation_from_herd" },
+   { id: "infertility", label: "infertility" },
+   { id: "intermittent_fever", label: "intermittent_fever" },
+   { id: "jaundice", label: "jaundice" },
+   { id: "ketosis", label: "ketosis" },
+   { id: "loss_of_appetite", label: "loss_of_appetite" },
+   { id: "lameness", label: "lameness" },
+   { id: "lack_of-coordination", label: "lack_of-coordination" },
+   { id: "lethargy", label: "lethargy" },
+   { id: "lacrimation", label: "lacrimation" },
+   { id: "milk_flakes", label: "milk_flakes" },
+   { id: "milk_watery", label: "milk_watery" },
+   { id: "milk_clots", label: "milk_clots" },
+   { id: "mild_diarrhoea	", label: "mild_diarrhoea	" },
+   { id: "moaning", label: "moaning" },
+   { id: "mucosal_lesions", label: "mucosal_lesions" },
+   { id: "milk_fever", label: "milk_fever" },
+   { id: "nausea", label: "nausea" },
+   { id: "nasel_discharges", label: "nasel_discharges" },
+   { id: "oedema", label: "oedema" },
+   { id: "pain", label: "pain" },
+   { id: "painful_tongue", label: "painful_tongue" },
+   { id: "pneumonia", label: "pneumonia" },
+   { id: "photo_sensitization", label: "photo_sensitization" },
+   { id: "quivering_lips", label: "quivering_lips" },
+   { id: "reduction_milk_vields", label: " reduction_milk_vields" },
+   { id: "rapid_breathing", label: "	rapid_breathing" },
+   { id: "rumenstasis	", label: "rumenstasis	" },
+   { id: "reduced_rumination", label: "reduced_rumination" },
+   { id: "reduced_fertility", label: "reduced_fertility" },
+   { id: "reduced_fat", label: "reduced_fat" },
+   { id: "reduces_feed_intake", label: "reduces_feed_intake" },
+   { id: "raised_breathing", label: "raised_breathing" },
+   { id: "stomach_pain", label: "stomach_pain" },
+   { id: "salivation", label: "salivation" },
+   { id: "stillbirths", label: "stillbirths" },
+   { id: "shallow_breathing", label: "shallow_breathing" },
+   { id: "swollen_pharyngeal", label: "swollen_pharyngeal" },
+   { id: "	swelling", label: "	swelling" },
+   { id: "saliva", label: "saliva" },
+   { id: "swollen_tongue", label: "swollen_tongue" },
+   { id: "tachycardia", label: "tachycardia" },
+   { id: "torticollis", label: "torticollis" },
+   { id: "udder_swelling", label: "udder_swelling" },
+   { id: "udder_heat", label: "udder_heat" },
+   { id: "udder_hardeness", label: "udder_hardeness" },
+   { id: "udder_redness", label: "udder_redness" },
+   { id: "udder_pain", label: "udder_pain" },
+   { id: "unwillingness_to_move", label: "unwillingness_to_move" },
+   { id: "ulcers", label: "ulcers" },
+   { id: "vomiting", label: "vomiting" },
+   { id: "weight_loss", label: "weight_loss" },
+   { id: "weakness", label: "weakness" },
+  
 ]
-
 // Sample disease prediction results
 const diseasePredictions = {
   "fever,coughing,nasal_discharge,difficulty_breathing": {
@@ -62,7 +137,7 @@ const diseasePredictions = {
       "Supportive care, fluid therapy, and antibiotics for secondary bacterial infections. No specific antiviral treatment exists.",
     prevention: "Vaccination, testing and removal of persistently infected animals, and biosecurity measures.",
   },
-  "udder_swelling,abnormal_milk,fever": {
+  "udder_heat,udder_pain": {
     disease: "Mastitis",
     confidence: 95,
     description:
@@ -80,7 +155,7 @@ const diseasePredictions = {
     prevention: "Strict biosecurity, vaccination in endemic areas, and immediate reporting to authorities.",
   },
   "skin_lesions,fever,reduced_appetite": {
-    disease: "Lumpy Skin Disease",
+    disease: "lumpy",
     confidence: 90,
     description:
       "Lumpy skin disease is a viral disease characterized by fever and nodules on the skin. It's transmitted by biting insects.",
@@ -144,31 +219,84 @@ export function DiseasePrediction() {
   }
   
   // Predict disease based on symptoms
-  const predictDiseaseFromSymptoms = () => {
-    if (selectedSymptoms.length === 0) {
-      toast({
-        title: "No Symptoms Selected",
-        description: "Please select at least one symptom to make a prediction.",
-        variant: "destructive",
-      })
-      return
+  // Predict disease based on symptoms
+const predictDiseaseFromSymptoms = async () => {
+  if (selectedSymptoms.length === 0) {
+    toast({
+      title: "No Symptoms Selected",
+      description: "Please select at least one symptom to make a prediction.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  setIsAnalyzing(true);
+
+  try {
+    const response = await fetch('http://127.0.0.1:8000/api/prompt_prediction/', { // Make sure this URL is correct
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ symptoms: selectedSymptoms }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
 
-    setIsAnalyzing(true)
+    const result = await response.json();
 
-    // Simulate API call with timeout
-    setTimeout(() => {
-      const symptomKey = selectedSymptoms.sort().join(",")
-      const result = diseasePredictions[symptomKey] || diseasePredictions.default
+    // The backend returns a simple JSON with the predicted disease.
+    // We need to find the detailed information from our frontend 'diseasePredictions' map.
+    const predictedDiseaseName = result.predicted_disease;
 
-      setPredictionResult(result)
-      dispatch(setPrediction(result))
-      setIsAnalyzing(false)
-    }, 2000)
+    // Find the full prediction details from the frontend's static data.
+    // In a more advanced application, this detailed data might also come from the backend.
+    const matchedPrediction = Object.values(diseasePredictions).find(
+      (p) => p.disease.toLowerCase() === predictedDiseaseName.toLowerCase()
+    ) as PredictionResultType | undefined;
+
+    const finalPrediction = matchedPrediction || {
+        ...diseasePredictions.default,
+        disease: predictedDiseaseName,
+        description: "The AI model identified this disease, but detailed information is not available in the frontend's static data.",
+    };
+
+
+    setPredictionResult(finalPrediction);
+    dispatch(setPrediction(finalPrediction));
+
+  } catch (error) {
+    console.error("Symptom Prediction API Error:", error);
+    let errorMessage = "An error occurred while analyzing the symptoms.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    toast({
+      title: "Analysis Failed",
+      description: errorMessage,
+      variant: "destructive",
+    });
+
+    // Set a default error state for the UI
+    setPredictionResult({
+      ...diseasePredictions.default,
+      disease: "Analysis Error",
+      description: "Could not get a prediction from the server. Please check your connection and try again.",
+    });
+
+  } finally {
+    setIsAnalyzing(false);
   }
+};
   const { data: session, status } = useSession();
-  // Predict disease from image
- const predictDiseaseFromImage = async () => {
+
+
+
+// Predict disease from image
+const predictDiseaseFromImage = async () => {
   if (!imageFile) {
     toast({
       title: "No Image Selected",
@@ -211,10 +339,49 @@ export function DiseasePrediction() {
           disease: predictedDiseaseName,
           description: "The AI model identified this disease, but detailed information is not available in the frontend.",
         };
-        if (predictedDiseaseName === "lumpy") {
-          finalPrediction.description = "Lumpy skin disease is a viral disease that affects cattle and is characterized by fever, enlarged superficial lymph nodes, and multiple nodules on the skin and mucous membranes.";
-        } else if (predictedDiseaseName === "another_disease_name") {
-          finalPrediction.description = "This is a custom description for another_disease_name.";
+        if (predictedDiseaseName === " lumpy") {
+          finalPrediction.description = "Lumpy skin disease (LSD) in cattle is a highly contagious viral disease, causing skin nodules, fever, mucous membranes and internal organs, emaciation, enlarged lymph nodes, oedema of the skin and other symptoms, potentially leading to death. It's caused by the Lumpy skin disease virus (LSDV), a capripoxvirus, and is transmitted through biting insects and ticks.";
+          finalPrediction.treatment ="There's no specific antiviral treatment for Lumpy Skin Disease (LSD) in cattle; treatment focuses on supportive care to manage secondary infections and alleviate symptoms. This includes administering antibiotics to prevent bacterial infections, using anti-inflammatory drugs for pain relief, and potentially providing intravenous fluids and other's.";
+          finalPrediction.prevention ="To prevent lumpy skin disease (LSD) in cattle, the most effective methods are regular vaccination, implementing strict biosecurity measures, and early detection and reporting of suspected cases. Mass vaccination is a cornerstone of prevention. Additionally, restricting animal movement, controlling vectors, and proper disposal of infected animals and contaminated materials are crucial for containing the disease. ";
+        } else if (predictedDiseaseName === " (BRD)") {
+          finalPrediction.description = "Bovine respiratory disease (BRD), also known as shipping fever pneumonia or undifferentiated fever, is a respiratory disease of cattle. BRD has a multifactorial etiology and develops as a result of complex interactions between environmental factors, host factors, and pathogens.";
+          finalPrediction.treatment ="Treatment of Bovine Respiratory Disease (BRD) in cattle typically involves a combination of antibiotics and anti-inflammatory drugs to address the underlying infection and reduce fever and taking Supportive care. Early intervention and rapid treatment initiation are crucial for success. ";
+          finalPrediction.prevention ="To prevent Bovine Respiratory Disease (BRD) in cattle, focus on minimizing stressors, improving biosecurity, and implementing a strong vaccination program. Key strategies include ensuring proper colostrum intake, reducing stress during handling and transportation, and vaccination against common pathogens. ";
+        }
+        else if (predictedDiseaseName === " Bovine") {
+          finalPrediction.description = "Bovine diseases are conditions that affect cattle and can significantly impact their health and productivity. These diseases can be infectious, caused by bacteria, viruses, or parasites, or non-infectious, resulting from nutritional deficiencies or genetic factors. Bovine diseases can cause a range of symptoms, including fever, lethargy, weight loss, reproductive problems, and neurological issues, depending on the specific disease. ";
+          finalPrediction.treatment ="Treatment for Bovine Respiratory Disease (BRD) in cattle typically involves antibiotics tailored to the specific case, such as tulathromycin, ceftiofur, or florfenicol, to target bacterial pathogens. Anti-inflammatory drugs like meloxicam or flunixin meglumine are often used alongside antibiotics to reduce fever, inflammation, and pain, improving recovery rates.";
+          finalPrediction.prevention ="Preventing bovine diseases in cattle involves a combination of measures, including biosecurity practices such as :- quarantine and isolation, movement control, cleaning and disinfection , vaccination, proper nutrition, and hygiene. These measures help reduce the risk of infection, spread of diseases, and improve the overall health of the herd. ";
+        }
+        else if (predictedDiseaseName === " Contagious") {
+          finalPrediction.description = "Contagious diseases in cattle are infections that can spread from one animal to another, often through direct contact, airborne droplets, or shared environment. These diseases can cause significant health problems and economic losses for cattle producers. Examples include Contagious Bovine Pleuropneumonia (CBPP) and Foot-and-Mouth Disease (FMD). ";
+          finalPrediction.treatment ="Treating contagious diseases in cattle involves both immediate care of infected animals and prevention of further spread. This includes providing adequate care to sick animals, such as ensuring access to water and feed, as well as implementing biosecurity measures to prevent the disease from spreading. Medications, often antibiotics, may be necessary, and should be administered as prescribed by a veterinarian. ";
+          finalPrediction.prevention ="Preventing the spread of contagious diseases in cattle requires a multi-faceted approach, including strict biosecurity measures such as isolate new arrivals, restricted access, equipment cleaning and disinfection, movement control, regular sanitation such as :- regular cleaning and disinfection, dry environment, proper disposal of waste, good husbandry practices, and, when necessary, vaccination or treatment. ";
+        }
+        else if (predictedDiseaseName === " Dermatitis") {
+          finalPrediction.description = "Digital dermatitis (DD) in cattle is an infectious skin disease, commonly known as foot rot, that affects the feet, particularly the heels and interdigital spaces. It causes painful lesions that can lead to lameness. DD is caused by a mix of bacteria, including Treponema spp., and is spread through the environment.DD typically presents as raw, red, oval ulcers or erosive lesions with filiform papillae (hair-like projections) on the heel bulbs and interdigital spaces. ";
+          finalPrediction.treatment ="Treatment of dermatitic diseases in cattle primarily focuses on topical therapies, especially for conditions like digital dermatitis. For digital dermatitis, this often involves cleaning and drying the affected area before applying a topical antibiotic spray, like oxytetracycline.";
+          finalPrediction.prevention ="To prevent dermatitis in cattle, focus on maintaining a clean and dry environment, regular foot care, and good hygiene. This includes cleaning passageways and collecting yards, using footbaths with disinfectants, and trimming hooves regularly. ";
+        }
+        else if (predictedDiseaseName === " Ecthym") {
+          finalPrediction.description = "Broadly refers to infections caused by Parapoxviruses, which are a group of viruses related to the Orf virus found in sheep and goats. The most common manifestations in cattle are Bovine Papular Stomatitis (BPS) and Pseudocowpox (PCP). These are generally mild, self-limiting viral skin diseases.";
+          finalPrediction.treatment ="Since Parapoxvirus infections (Ecthym disease, Bovine Papular Stomatitis, Pseudocowpox) in cattle are typically self-limiting, specific antiviral treatment is generally not required. The focus is on supportive care:Manage symptoms: Use non-steroidal anti-inflammatory drugs (NSAIDs) for pain or discomfort, especially with oral or teat lesions, to encourage eating and easier milking.Prevent secondary infections: Apply topical antiseptic ointments or emollient teat dips to lesions to prevent bacterial complications, particularly on teats.Ensure good hygiene: Isolate affected animals, clean and disinfect feeding equipment and milking machines, and use gloves during handling to limit spread.";
+          finalPrediction.prevention ="Implement strict biosecurity, including isolation of new or affected animals, and maintain excellent hygiene for milking equipment and feeding areas. Vaccination is available for related Parapoxviruses and can be considered in endemic areas.";
+        }
+        else if (predictedDiseaseName === " Respiratory") {
+          finalPrediction.description = "Often called as shipping fever, is a common and serious illness in cattle, primarily affecting young calves but also impacting adults. It's a complex issue, caused by a combination of viral and bacterial infections, stress, and environmental factors. The disease manifests with symptoms like coughing, nasal discharge, fever, and lethargy, and can be severe if left untreated. ";
+          finalPrediction.treatment ="Combination of antibiotics, anti-inflammatories, and supportive care. Antibiotics target secondary bacterial infections, while anti-inflammatories reduce inflammation and fever. Supportive care includes electrolyte administration, nutritional support, and in some cases, immunostimulants. ";
+          finalPrediction.prevention ="To prevent respiratory diseases in cattle, focus on minimizing stress, implementing a good vaccination program, and ensuring proper nutrition and biosecurity measures. Early diagnosis and treatment of affected animals are also crucial. ";
+        }
+        else if (predictedDiseaseName === " Unlabeled") {
+          finalPrediction.description = "There is no labeled data";
+          finalPrediction.treatment ="There is no labeled data";
+          finalPrediction.prevention ="There is no labeled data";
+        }
+        else if (predictedDiseaseName === " healthy") {
+          finalPrediction.description = "A healthy cow exhibits signs of good physical and mental well-being, including a smooth, shiny coat, bright eyes, and upright ears. They should move easily and steadily, with all four feet bearing weight.Their nose and muzzle should be clean and moist, with no dribbling saliva, and also dung will be soft and their urine should be clear. If you notice anything wrong with your dairy cow, contact your vet as this could be detrimental to the rest of your herd.";
+          finalPrediction.treatment  ="The treatment of healthy cattle focuses on preventative measures and maintaining optimal conditions for their well-being, rather than directly treating illness. This includes good nutrition, regular hoof trimming, footbaths when needed, and implementing herd health management plans.  ";
+          finalPrediction.prevention ="Involves a multifaceted approach focused on biosecurity, proper management practices, and regular veterinary care. Key strategies include implementing strict biosecurity measures to prevent disease introduction and spread, ensuring adequate nutrition and housing, utilizing vaccinations and parasite control programs, and conducting regular health checks and diagnostic testing. ";
         }
       }
     }
@@ -245,6 +412,9 @@ export function DiseasePrediction() {
     setIsAnalyzing(false);
   }
 };
+
+// ... (rest of your existing code)
+
 
   // Reset prediction
   const resetPrediction = () => {
