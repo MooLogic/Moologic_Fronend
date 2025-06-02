@@ -5,78 +5,26 @@ import { Plus, Filter, Search, Edit, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { DatePicker } from "@/components/date-picker"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-
-// Sample data
-const calvingRecords = [
-  {
-    id: 1,
-    cattleId: "#876364",
-    calvingDate: "12-12-2023",
-    calfCount: 1,
-    calfGender: "Female",
-    calfEarTag: "#876412",
-    complications: "None",
-    notes: "Normal delivery",
-  },
-  {
-    id: 2,
-    cattleId: "#876368",
-    calvingDate: "15-11-2023",
-    calfCount: 2,
-    calfGender: "Male, Female",
-    calfEarTag: "#876413, #876414",
-    complications: "Slight difficulty",
-    notes: "Twins, both healthy",
-  },
-  {
-    id: 3,
-    cattleId: "#876372",
-    calvingDate: "05-10-2023",
-    calfCount: 1,
-    calfGender: "Male",
-    calfEarTag: "#876415",
-    complications: "None",
-    notes: "Healthy calf",
-  },
-  {
-    id: 4,
-    cattleId: "#876375",
-    calvingDate: "22-09-2023",
-    calfCount: 1,
-    calfGender: "Female",
-    calfEarTag: "#876416",
-    complications: "Needed assistance",
-    notes: "Difficult birth but both mother and calf are fine",
-  },
-  {
-    id: 5,
-    cattleId: "#876380",
-    calvingDate: "10-08-2023",
-    calfCount: 1,
-    calfGender: "Male",
-    calfEarTag: "#876417",
-    complications: "None",
-    notes: "Normal delivery",
-  },
-]
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { useSession } from 'next-auth/react'
+import { useToast } from "@/components/ui/use-toast"
+import { CalvingRecordForm } from "./calving-record-form"
+import { format } from 'date-fns'
+import { useGetBirthRecordsQuery, useDeleteBirthRecordMutation } from '@/lib/service/cattleService'
 
 export function CalvingRecords() {
+  const { data: session } = useSession();
+  const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedRecord, setSelectedRecord] = useState(null)
+
+  const { data: birthRecordsData, isLoading, error } = useGetBirthRecordsQuery(
+    { accessToken: session?.accessToken as string || '' },
+    { skip: !session?.accessToken }
+  );
+
+  const [deleteBirthRecord] = useDeleteBirthRecordMutation();
 
   const handleDelete = (record) => {
     setSelectedRecord(record)
@@ -88,9 +36,38 @@ export function CalvingRecords() {
     setIsAddDialogOpen(true)
   }
 
-  const confirmDelete = () => {
-    // Delete logic would go here
-    setIsDeleteDialogOpen(false)
+  const confirmDelete = async () => {
+    if (!selectedRecord) return;
+    
+    try {
+      await deleteBirthRecord({
+        accessToken: session?.accessToken as string || '',
+        id: selectedRecord.id
+      }).unwrap();
+      
+      toast({
+        title: "Success",
+        description: "Birth record deleted successfully",
+      });
+      
+      setIsDeleteDialogOpen(false);
+      setSelectedRecord(null);
+    } catch (error) {
+      console.error('Failed to delete birth record:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete birth record",
+        variant: "destructive",
+      });
+    }
+  }
+
+  if (isLoading) {
+    return <div className="p-8">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="p-8 text-red-500">Error loading birth records</div>;
   }
 
   return (
@@ -109,145 +86,17 @@ export function CalvingRecords() {
           </div>
           <Button variant="outline" size="icon">
             <Filter className="h-4 w-4" />
-          </Button>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-indigo-600 hover:bg-indigo-700">
-                <Plus className="h-5 w-5 mr-2" />
-                Add New
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[525px]">
-              <DialogHeader>
-                <DialogTitle>{selectedRecord ? "Edit Calving Record" : "Add New Calving Record"}</DialogTitle>
-                <DialogDescription>
-                  {selectedRecord
-                    ? "Update the details of this calving record"
-                    : "Enter the details of the new calving record"}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="cattleId" className="text-right">
-                    Cattle ID
-                  </Label>
-                  <div className="col-span-3">
-                    <Select defaultValue={selectedRecord?.cattleId || ""}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select cattle" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="#876364">#876364</SelectItem>
-                        <SelectItem value="#876368">#876368</SelectItem>
-                        <SelectItem value="#876372">#876372</SelectItem>
-                        <SelectItem value="#876375">#876375</SelectItem>
-                        <SelectItem value="#876380">#876380</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="calvingDate" className="text-right">
-                    Calving Date
-                  </Label>
-                  <div className="col-span-3">
-                    <DatePicker />
-                  </div>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="calfCount" className="text-right">
-                    Calf Count
-                  </Label>
-                  <Input
-                    id="calfCount"
-                    type="number"
-                    min="1"
-                    defaultValue={selectedRecord?.calfCount || "1"}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="calfGender" className="text-right">
-                    Calf Gender
-                  </Label>
-                  <div className="col-span-3">
-                    <Select defaultValue={selectedRecord?.calfGender || ""}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select gender" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Male">Male</SelectItem>
-                        <SelectItem value="Female">Female</SelectItem>
-                        <SelectItem value="Male, Female">Male, Female (Twins)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="calfEarTag" className="text-right">
-                    Calf Ear Tag
-                  </Label>
-                  <Input
-                    id="calfEarTag"
-                    defaultValue={selectedRecord?.calfEarTag || ""}
-                    className="col-span-3"
-                    placeholder="e.g. #876412 or multiple tags separated by commas"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="complications" className="text-right">
-                    Complications
-                  </Label>
-                  <div className="col-span-3">
-                    <Select defaultValue={selectedRecord?.complications || ""}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select complications" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="None">None</SelectItem>
-                        <SelectItem value="Slight difficulty">Slight difficulty</SelectItem>
-                        <SelectItem value="Needed assistance">Needed assistance</SelectItem>
-                        <SelectItem value="Severe complications">Severe complications</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="notes" className="text-right">
-                    Notes
-                  </Label>
-                  <Textarea
-                    id="notes"
-                    defaultValue={selectedRecord?.notes || ""}
-                    className="col-span-3"
-                    placeholder="Enter any additional notes..."
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIsAddDialogOpen(false)
-                    setSelectedRecord(null)
-                  }}
-                >
-                  Cancel
                 </Button>
                 <Button
-                  type="submit"
                   className="bg-indigo-600 hover:bg-indigo-700"
                   onClick={() => {
-                    setIsAddDialogOpen(false)
-                    setSelectedRecord(null)
+              setSelectedRecord(null);
+              setIsAddDialogOpen(true);
                   }}
                 >
-                  {selectedRecord ? "Update Record" : "Add Record"}
+            <Plus className="h-5 w-5 mr-2" />
+            Add New
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </div>
 
         {/* Records Table */}
@@ -266,15 +115,15 @@ export function CalvingRecords() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {calvingRecords.map((record) => (
+              {birthRecordsData?.results?.map((record) => (
                 <TableRow key={record.id}>
-                  <TableCell className="font-medium">{record.cattleId}</TableCell>
-                  <TableCell>{record.calvingDate}</TableCell>
-                  <TableCell>{record.calfCount}</TableCell>
-                  <TableCell>{record.calfGender}</TableCell>
-                  <TableCell>{record.calfEarTag}</TableCell>
-                  <TableCell>{record.complications}</TableCell>
-                  <TableCell className="max-w-[200px] truncate">{record.notes}</TableCell>
+                  <TableCell className="font-medium">{record.cattle.ear_tag_no}</TableCell>
+                  <TableCell>{format(new Date(record.calving_date), 'dd-MM-yyyy')}</TableCell>
+                  <TableCell>{record.calf_count}</TableCell>
+                  <TableCell>{record.calf_gender}</TableCell>
+                  <TableCell>{record.calf_ear_tag}</TableCell>
+                  <TableCell>{record.complications || 'None'}</TableCell>
+                  <TableCell className="max-w-[200px] truncate">{record.notes || '-'}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button variant="ghost" size="icon" onClick={() => handleEdit(record)}>
@@ -287,27 +136,44 @@ export function CalvingRecords() {
                   </TableCell>
                 </TableRow>
               ))}
+              {(!birthRecordsData?.results || birthRecordsData.results.length === 0) && (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-4">
+                    No calving records found
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </div>
+
+        {/* Add/Edit Dialog */}
+        <CalvingRecordForm
+          open={isAddDialogOpen}
+          onClose={() => {
+            setIsAddDialogOpen(false);
+            setSelectedRecord(null);
+          }}
+          record={selectedRecord}
+        />
 
         {/* Delete Confirmation Dialog */}
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Confirm Deletion</DialogTitle>
-              <DialogDescription>
+              <p className="text-sm text-gray-500 mt-2">
                 Are you sure you want to delete this calving record? This action cannot be undone.
-              </DialogDescription>
+              </p>
             </DialogHeader>
-            <DialogFooter>
+            <div className="flex justify-end gap-3 mt-4">
               <Button type="button" variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
                 Cancel
               </Button>
               <Button type="submit" variant="destructive" onClick={confirmDelete}>
                 Delete
               </Button>
-            </DialogFooter>
+            </div>
           </DialogContent>
         </Dialog>
       </div>

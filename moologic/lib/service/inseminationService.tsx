@@ -1,28 +1,65 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import process from 'process';
+import { API_BASE_URL } from '@/lib/constants';
+
+export interface InseminationRecord {
+  id: string;
+  cattle: {
+    id: string;
+    ear_tag_no: string;
+  };
+  bull_id?: string;
+  insemination_method: 'natural' | 'artificial';
+  insemination_status: 'pending' | 'successful' | 'failed';
+  insemination_date: string;
+  pregnancy_check_date?: string;
+  pregnancy_check_status: 'pending' | 'confirmed' | 'negative';
+  expected_calving_date?: string;
+  pregnancy_check_reminder_sent: boolean;
+  notes?: string;
+}
+
+// Helper function to get error message from response
+const getErrorMessage = (response: any): string => {
+    if (!response) return 'An error occurred';
+    if (typeof response === 'string') return response;
+    
+    const data = response.data || {};
+    return data.error || data.message || data.detail || 'An error occurred';
+};
 
 export const inseminationApi = createApi({
   reducerPath: 'inseminationApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: process.env.base_url || 'http://127.0.0.1:8000/',
+    baseUrl: API_BASE_URL,
   }),
+  tagTypes: ['Insemination'],
   endpoints: (builder) => ({
-    getInseminations: builder.query({
-      query: (data: { accessToken: string }) => ({
+    getInseminations: builder.query<{ count: number; results: InseminationRecord[] }, { accessToken: string }>({
+      query: (data) => ({
         url: '/core/inseminations/',
         method: 'GET',
         headers: {
           Authorization: `Bearer ${data.accessToken}`,
         },
       }),
+      providesTags: ['Insemination'],
+      transformErrorResponse: (response: any) => ({
+        status: response.status,
+        message: getErrorMessage(response),
+      }),
     }),
-    getInseminationById: builder.query({
-      query: (data: { accessToken: string; id: string }) => ({
-        url: `/core/inseminations/${data.id}/`,
+    getPendingPregnancyChecks: builder.query<InseminationRecord[], { accessToken: string }>({
+      query: (data) => ({
+        url: '/core/inseminations/pending-checks/',
         method: 'GET',
         headers: {
           Authorization: `Bearer ${data.accessToken}`,
         },
+      }),
+      providesTags: ['Insemination'],
+      transformErrorResponse: (response: any) => ({
+        status: response.status,
+        message: getErrorMessage(response),
       }),
     }),
     postInsemination: builder.mutation({
@@ -32,8 +69,6 @@ export const inseminationApi = createApi({
         insemination_date: string;
         bull_id?: string;
         insemination_method: string;
-        insemination_status: string;
-        insemination_type: string;
         notes?: string;
       }) => ({
         url: '/core/inseminations/create/',
@@ -47,69 +82,40 @@ export const inseminationApi = createApi({
           insemination_date: data.insemination_date,
           bull_id: data.bull_id,
           insemination_method: data.insemination_method,
-          insemination_status: data.insemination_status,
-          insemination_type: data.insemination_type,
           notes: data.notes,
         },
       }),
+      transformErrorResponse: (response: any) => ({
+        status: response.status,
+        message: getErrorMessage(response),
+      }),
+      invalidatesTags: ['Insemination'],
     }),
     updateInsemination: builder.mutation({
       query: (data: {
         accessToken: string;
         id: string;
-        cattle_id: string;
-        insemination_date: string;
-        bull_id?: string;
-        insemination_method: string;
-        insemination_status: string;
-        insemination_type: string;
+        pregnancy_check_date?: string;
+        pregnancy_check_status?: string;
         notes?: string;
       }) => ({
-        url: `/core/inseminations/${data.id}/update/`,
+        url: `/core/inseminations/${data.id}/`,
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${data.accessToken}`,
           'Content-Type': 'application/json',
         },
         body: {
-          cattle: data.cattle_id,
-          insemination_date: data.insemination_date,
-          bull_id: data.bull_id,
-          insemination_method: data.insemination_method,
-          insemination_status: data.insemination_status,
-          insemination_type: data.insemination_type,
+          pregnancy_check_date: data.pregnancy_check_date,
+          pregnancy_check_status: data.pregnancy_check_status,
           notes: data.notes,
         },
       }),
-    }),
-    partialUpdateInsemination: builder.mutation({
-      query: (data: {
-        accessToken: string;
-        id: string;
-        cattle_id?: string;
-        insemination_date?: string;
-        bull_id?: string;
-        insemination_method?: string;
-        insemination_status?: string;
-        insemination_type?: string;
-        notes?: string;
-      }) => ({
-        url: `/core/inseminations/${data.id}/partial-update/`,
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${data.accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: {
-          cattle: data.cattle_id,
-          insemination_date: data.insemination_date,
-          bull_id: data.bull_id,
-          insemination_method: data.insemination_method,
-          insemination_status: data.insemination_status,
-          insemination_type: data.insemination_type,
-          notes: data.notes,
-        },
+      transformErrorResponse: (response: any) => ({
+        status: response.status,
+        message: getErrorMessage(response),
       }),
+      invalidatesTags: ['Insemination'],
     }),
     deleteInsemination: builder.mutation({
       query: (data: { accessToken: string; id: string }) => ({
@@ -119,15 +125,15 @@ export const inseminationApi = createApi({
           Authorization: `Bearer ${data.accessToken}`,
         },
       }),
+      invalidatesTags: ['Insemination'],
     }),
   }),
 });
 
 export const {
   useGetInseminationsQuery,
-  useGetInseminationByIdQuery,
+  useGetPendingPregnancyChecksQuery,
   usePostInseminationMutation,
   useUpdateInseminationMutation,
-  usePartialUpdateInseminationMutation,
   useDeleteInseminationMutation,
 } = inseminationApi;

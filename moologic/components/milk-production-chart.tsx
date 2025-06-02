@@ -1,104 +1,156 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
-import { useTheme } from "@/components/providers/theme-provider"
-import { useMobile } from "@/hooks/use-mobile"
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, Legend } from "recharts"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Info } from "lucide-react"
+import {
+  Tooltip as UITooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
-const data = [
-  { time: "10am", ideal: 280, current: 260 },
-  { time: "11am", ideal: 170, current: 150 },
-  { time: "12pm", ideal: 190, current: 180 },
-  { time: "01am", ideal: 240, current: 220 },
-  { time: "02am", ideal: 278, current: 278, name: "Jiangyu" },
-  { time: "03am", ideal: 190, current: 170 },
-  { time: "04am", ideal: 190, current: 90 },
-  { time: "05am", ideal: 180, current: 160 },
-  { time: "06am", ideal: 220, current: 200 },
-  { time: "07am", ideal: 290, current: 270 },
-]
+interface ChartData {
+  date: string;
+  actual: number;
+  estimated: number;
+  difference: number;
+}
 
-export function MilkProductionChart() {
-  const { theme } = useTheme()
-  const isMobile = useMobile()
-  const [chartData, setChartData] = useState(data)
+interface MilkProductionChartProps {
+  data: ChartData[];
+}
 
-  useEffect(() => {
-    // For mobile, reduce the number of data points to avoid overcrowding
-    if (isMobile) {
-      const reducedData = data.filter((_, index) => index % 2 === 0)
-      setChartData(reducedData)
-    } else {
-      setChartData(data)
-    }
-  }, [isMobile])
+const WOODS_PARAMS = {
+  a: 20, // Scale parameter (peak production)
+  b: 0.05, // Rate of increase to peak
+  c: 0.003, // Rate of decline after peak
+}
+
+export function MilkProductionChart({ data }: MilkProductionChartProps) {
+  if (!data || data.length === 0) {
+    return (
+      <div className="h-[300px] w-full flex items-center justify-center">
+        <p className="text-muted-foreground">No data available</p>
+      </div>
+    )
+  }
 
   return (
-    <div className="h-[300px] w-full">
-      <div className="mb-4 flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded-full bg-indigo-500" />
-          <span className="text-sm">Ideal Production</span>
+    <Card>
+      <CardHeader>
+        <div className="flex flex-col space-y-2">
+          <div className="flex items-center gap-2">
+            <CardTitle>Production Overview</CardTitle>
+            <TooltipProvider>
+              <UITooltip>
+                <TooltipTrigger>
+                  <Info className="h-4 w-4 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>This chart shows actual vs expected milk production based on your herd's characteristics</p>
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
+          </div>
+          <CardDescription>
+            <div className="space-y-2">
+              <p>Expected milk production is calculated based on:</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <Badge variant="outline" className="justify-between">
+                  <span>Peak Production:</span>
+                  <span className="font-bold">{WOODS_PARAMS.a}L per cow</span>
+                </Badge>
+                <Badge variant="outline" className="justify-between">
+                  <span>Growth Rate:</span>
+                  <span className="font-bold">Normal</span>
+                </Badge>
+                <Badge variant="outline" className="justify-between">
+                  <span>Decline Rate:</span>
+                  <span className="font-bold">Standard</span>
+                </Badge>
+              </div>
+            </div>
+          </CardDescription>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded-full bg-green-500" />
-          <span className="text-sm">Current Production</span>
+      </CardHeader>
+      <CardContent>
+        <div className="w-full aspect-[2/1]">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={data}
+              margin={{
+                top: 5,
+                right: 30,
+                left: 20,
+                bottom: 5,
+              }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 12 }}
+                interval="preserveStartEnd"
+              />
+              <YAxis
+                yAxisId="left"
+                tick={{ fontSize: 12 }}
+                label={{ value: 'Liters', angle: -90, position: 'insideLeft' }}
+              />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                tick={{ fontSize: 12 }}
+                label={{ value: 'Difference %', angle: 90, position: 'insideRight' }}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                }}
+                formatter={(value: number, name: string) => {
+                  if (name === 'Difference %') {
+                    return [`${value.toFixed(1)}%`, 'Difference from Expected']
+                  }
+                  return [`${value.toFixed(1)} L`, name]
+                }}
+              />
+              <Legend />
+              <Line
+                yAxisId="left"
+                type="monotone"
+                dataKey="actual"
+                stroke="#2563eb"
+                name="Actual Production"
+                strokeWidth={2}
+                dot={false}
+              />
+              <Line
+                yAxisId="left"
+                type="monotone"
+                dataKey="estimated"
+                stroke="#16a34a"
+                name="Expected Production"
+                strokeWidth={2}
+                dot={false}
+                strokeDasharray="5 5"
+              />
+              <Line
+                yAxisId="right"
+                type="monotone"
+                dataKey="difference"
+                stroke="#dc2626"
+                name="Difference %"
+                strokeWidth={1}
+                dot={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
-      </div>
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={chartData} margin={{ top: 5, right: 10, left: isMobile ? -20 : 0, bottom: 5 }}>
-          <XAxis
-            dataKey="time"
-            axisLine={false}
-            tickLine={false}
-            tick={{ fill: theme === "dark" ? "#888" : "#888", fontSize: isMobile ? 10 : 12 }}
-            interval={isMobile ? 1 : 0}
-          />
-          <YAxis
-            axisLine={false}
-            tickLine={false}
-            tick={{ fill: theme === "dark" ? "#888" : "#888", fontSize: isMobile ? 10 : 12 }}
-            domain={[0, 500]}
-            ticks={[0, 100, 200, 300, 400, 500]}
-            width={isMobile ? 30 : 40}
-          />
-          <Tooltip
-            content={({ active, payload }) => {
-              if (active && payload && payload.length) {
-                const data = payload[0].payload
-                return (
-                  <div className="bg-white dark:bg-gray-800 p-2 border rounded-lg shadow-lg">
-                    <div className="text-xs text-gray-500 dark:text-gray-400">{data.time}</div>
-                    <div className="font-medium">
-                      {data.name && <div className="text-sm mb-1">Full Name: {data.name}</div>}
-                      <div className="text-indigo-600 dark:text-indigo-400">Ideal: {data.ideal} Ltrs</div>
-                      <div className="text-green-600 dark:text-green-400">Current: {data.current} Ltrs</div>
-                    </div>
-                  </div>
-                )
-              }
-              return null
-            }}
-          />
-          <Line
-            type="monotone"
-            dataKey="ideal"
-            stroke="#6366f1"
-            strokeWidth={2}
-            dot={false}
-            activeDot={{ r: isMobile ? 4 : 6 }}
-          />
-          <Line
-            type="monotone"
-            dataKey="current"
-            stroke="#22c55e"
-            strokeWidth={2}
-            dot={false}
-            activeDot={{ r: isMobile ? 4 : 6 }}
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
+      </CardContent>
+    </Card>
   )
 }
 

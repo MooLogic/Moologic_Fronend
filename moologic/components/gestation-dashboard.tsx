@@ -1,118 +1,89 @@
 "use client"
 
-import { useState } from "react"
-import { useTranslation } from "@/components/providers/language-provider"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Calendar, Clock, AlertCircle, CheckCircle, CalendarIcon } from "lucide-react"
-import { DatePicker } from "@/components/date-picker"
-import { motion } from "framer-motion"
+import { useEffect, useState } from 'react'
+import { useSession } from 'next-auth/react'
+import { useTranslation } from '@/components/providers/language-provider'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { Calendar, Clock, AlertCircle, CheckCircle, CalendarIcon, Stethoscope, Scale, Activity } from 'lucide-react'
+import { DatePicker } from './date-picker'
+import { motion } from 'framer-motion'
+import { GestationTimeline } from './gestation-timeline'
+import { useGetCattleDataQuery, useGetGestationDataQuery } from '@/lib/service/cattleService'
+import { format } from 'date-fns'
+
+interface ExtendedSession extends Record<string, any> {
+  user: {
+    accessToken: string;
+    [key: string]: any;
+  };
+}
 
 export function GestationDashboard() {
   const { t } = useTranslation()
+  const { data: session } = useSession() as { data: ExtendedSession | null }
   const [date, setDate] = useState<Date>()
 
-  // Sample data for pregnant cattle
-  const pregnantCattle = [
-    {
-      id: "COW001",
-      name: "Bella",
-      breedingDate: "2023-05-15",
-      dueDate: "2024-02-22",
-      daysLeft: 45,
-      progress: 84,
-      status: "normal",
-    },
-    {
-      id: "COW007",
-      name: "Daisy",
-      breedingDate: "2023-06-10",
-      dueDate: "2024-03-18",
-      daysLeft: 70,
-      progress: 75,
-      status: "normal",
-    },
-    {
-      id: "COW012",
-      name: "Rosie",
-      breedingDate: "2023-07-05",
-      dueDate: "2024-04-12",
-      daysLeft: 95,
-      progress: 65,
-      status: "attention",
-    },
-    {
-      id: "COW015",
-      name: "Lily",
-      breedingDate: "2023-08-20",
-      dueDate: "2024-05-27",
-      daysLeft: 140,
-      progress: 48,
-      status: "normal",
-    },
-  ]
+  const { data: cattleData, isLoading: cattleLoading } = useGetCattleDataQuery(
+    { accessToken: session?.user?.accessToken || '' },
+    { 
+      skip: !session?.user?.accessToken,
+      pollingInterval: 30000
+    }
+  )
 
-  // Sample data for recent calvings
-  const recentCalvings = [
-    {
-      id: "COW003",
-      name: "Molly",
-      calvingDate: "2024-01-05",
-      calfCount: 1,
-      calfGender: "Female",
-      calfWeight: "35 kg",
-      status: "healthy",
-    },
-    {
-      id: "COW009",
-      name: "Lucy",
-      calvingDate: "2024-01-12",
-      calfCount: 2,
-      calfGender: "Male, Female",
-      calfWeight: "32 kg, 30 kg",
-      status: "attention",
-    },
-    {
-      id: "COW005",
-      name: "Buttercup",
-      calvingDate: "2024-01-18",
-      calfCount: 1,
-      calfGender: "Male",
-      calfWeight: "38 kg",
-      status: "healthy",
-    },
-  ]
+  const { data: gestationData, isLoading: gestationLoading, error } = useGetGestationDataQuery(
+    { accessToken: session?.user?.accessToken || '' },
+    { 
+      skip: !session?.user?.accessToken,
+      pollingInterval: 30000
+    }
+  )
 
-  // Sample data for upcoming inseminations
-  const upcomingInseminations = [
-    {
-      id: "COW022",
-      name: "Clover",
-      heatDate: "2024-01-28",
-      inseminationDate: "2024-01-30",
-      bullInfo: "Holstein Premium",
-      notes: "Second insemination attempt",
-    },
-    {
-      id: "COW018",
-      name: "Poppy",
-      heatDate: "2024-01-30",
-      inseminationDate: "2024-02-01",
-      bullInfo: "Jersey Elite",
-      notes: "First insemination",
-    },
-    {
-      id: "COW025",
-      name: "Tulip",
-      heatDate: "2024-02-03",
-      inseminationDate: "2024-02-05",
-      bullInfo: "Angus Select",
-      notes: "Third insemination attempt",
-    },
-  ]
+  const isLoading = cattleLoading || gestationLoading
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Loading...</CardTitle>
+          <CardDescription>Please wait while we fetch the data.</CardDescription>
+        </CardHeader>
+      </Card>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Error</CardTitle>
+          <CardDescription className="text-red-500">
+            {error instanceof Error ? error.message : 'Failed to fetch data'}
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    )
+  }
+
+  const pregnantCattle = gestationData?.results.map(data => ({
+    id: data.cattle.ear_tag_no,
+    breed: data.cattle.breed || 'Unknown Breed',
+    breedingDate: format(new Date(data.cattle.last_insemination_date), 'yyyy-MM-dd'),
+    dueDate: format(new Date(data.cattle.expected_calving_date), 'yyyy-MM-dd'),
+    daysLeft: data.cattle.days_until_calving,
+    progress: data.cattle.gestation_progress,
+    status: data.alerts.length > 0 ? 'attention' : 'normal',
+    milestones: data.cattle.milestones,
+    healthChecks: data.cattle.gestation_checks || [],
+    lactationNumber: data.cattle.current_lactation || 0,
+    calvingCount: data.cattle.calving_count || 0,
+    lastHealthCheck: data.cattle.gestation_checks?.[0] || null,
+    alerts: data.alerts || [],
+  })) || []
 
   return (
     <div className="relative">
@@ -151,20 +122,87 @@ export function GestationDashboard() {
           <DatePicker date={date} setDate={setDate} />
         </motion.div>
 
-        <Tabs defaultValue="pregnancies" className="space-y-6">
+        <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className="bg-muted/50 backdrop-blur-sm">
-            <TabsTrigger value="pregnancies">{t("Pregnancies")}</TabsTrigger>
-            <TabsTrigger value="calvings">{t("Recent Calvings")}</TabsTrigger>
-            <TabsTrigger value="inseminations">{t("Upcoming Inseminations")}</TabsTrigger>
-            <TabsTrigger value="timeline">{t("Timeline")}</TabsTrigger>
+            <TabsTrigger value="overview">{t("Overview")}</TabsTrigger>
+            <TabsTrigger value="details">{t("Details")}</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="pregnancies" className="space-y-6">
+          <TabsContent value="overview" className="space-y-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
             >
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      Total Pregnant
+                    </CardTitle>
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{pregnantCattle.length}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      Due This Month
+                    </CardTitle>
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {pregnantCattle.filter(cow => 
+                        new Date(cow.dueDate).getMonth() === new Date().getMonth()
+                      ).length}
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      Needs Attention
+                    </CardTitle>
+                    <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {pregnantCattle.filter(cow => cow.status === 'attention').length}
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      Average Progress
+                    </CardTitle>
+                    <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {Math.round(
+                        pregnantCattle.reduce((acc, cow) => acc + cow.progress, 0) / 
+                        (pregnantCattle.length || 1)
+                      )}%
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+              <GestationTimeline animals={cattleData?.results || []} />
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="details" className="space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle>{t("Pregnant Cattle")}</CardTitle>
@@ -173,48 +211,30 @@ export function GestationDashboard() {
                 <CardContent>
                   <div className="space-y-6">
                     {pregnantCattle.map((cow) => (
-                      <div key={cow.id} className="border rounded-lg p-4 bg-card">
-                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-                          <div>
+                    <div key={cow.id} className="border rounded-lg p-6 bg-card">
+                      <div className="space-y-6">
+                        {/* Header Section */}
+                        <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <h3 className="text-lg font-semibold">{cow.name}</h3>
-                              <Badge variant="outline">{cow.id}</Badge>
+                            <h3 className="text-lg font-semibold">{cow.id}</h3>
+                            <Badge variant="outline">{cow.breed}</Badge>
                               {cow.status === "attention" && (
-                                <Badge variant="destructive" className="ml-2">
+                              <Badge variant="destructive">
                                   {t("Needs Attention")}
                                 </Badge>
                               )}
-                            </div>
-                            <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-4 w-4" />
-                                <span>
-                                  {t("Bred")}: {cow.breedingDate}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <CalendarIcon className="h-4 w-4" />
-                                <span>
-                                  {t("Due")}: {cow.dueDate}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-4 w-4" />
-                                <span>
-                                  {cow.daysLeft} {t("days left")}
-                                </span>
-                              </div>
-                            </div>
                           </div>
                           <div className="flex gap-2">
-                            <Button variant="outline" size="sm">
-                              {t("Details")}
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              {t("Record Check")}
-                            </Button>
+                            <Badge variant="secondary">
+                              {t("Lactation")}: {cow.lactationNumber}
+                            </Badge>
+                            <Badge variant="secondary">
+                              {t("Calvings")}: {cow.calvingCount}
+                            </Badge>
                           </div>
                         </div>
+
+                        {/* Progress Section */}
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">
                             <span>{t("Gestation Progress")}</span>
@@ -222,198 +242,106 @@ export function GestationDashboard() {
                           </div>
                           <Progress value={cow.progress} className="h-2" />
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </TabsContent>
 
-          <TabsContent value="calvings" className="space-y-6">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t("Recent Calvings")}</CardTitle>
-                  <CardDescription>{t("Records of recent calving events.")}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    {recentCalvings.map((record) => (
-                      <div key={record.id} className="border rounded-lg p-4 bg-card">
-                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+                        {/* Important Dates */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
                           <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="text-lg font-semibold">{record.name}</h3>
-                              <Badge variant="outline">{record.id}</Badge>
-                              {record.status === "attention" ? (
-                                <Badge variant="destructive" className="ml-2">
-                                  <AlertCircle className="h-3 w-3 mr-1" />
-                                  {t("Needs Attention")}
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 ml-2">
-                                  <CheckCircle className="h-3 w-3 mr-1" />
-                                  {t("Healthy")}
-                                </Badge>
-                              )}
+                              <div className="text-sm font-medium">{t("Breeding Date")}</div>
+                              <div className="text-sm text-muted-foreground">{cow.breedingDate}</div>
                             </div>
-                            <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-4 w-4" />
-                                <span>
-                                  {t("Calving Date")}: {record.calvingDate}
-                                </span>
                               </div>
+                          <div className="flex items-center gap-2">
+                            <CalendarIcon className="h-4 w-4" />
                               <div>
-                                <span>
-                                  {t("Calves")}: {record.calfCount}
-                                </span>
-                              </div>
-                              <div>
-                                <span>
-                                  {t("Gender")}: {record.calfGender}
-                                </span>
-                              </div>
-                              <div>
-                                <span>
-                                  {t("Weight")}: {record.calfWeight}
-                                </span>
-                              </div>
+                              <div className="text-sm font-medium">{t("Due Date")}</div>
+                              <div className="text-sm text-muted-foreground">{cow.dueDate}</div>
                             </div>
                           </div>
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm">
-                              {t("Details")}
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              {t("Health Records")}
-                            </Button>
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            <div>
+                              <div className="text-sm font-medium">{t("Days Left")}</div>
+                              <div className="text-sm text-muted-foreground">{cow.daysLeft} days</div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </TabsContent>
 
-          <TabsContent value="inseminations" className="space-y-6">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t("Upcoming Inseminations")}</CardTitle>
-                  <CardDescription>{t("Schedule of upcoming insemination events.")}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    {upcomingInseminations.map((record) => (
-                      <div key={record.id} className="border rounded-lg p-4 bg-card">
-                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+                        {/* Health Checks */}
+                        {cow.lastHealthCheck && (
+                          <div className="border-t pt-4">
+                            <h4 className="text-sm font-semibold mb-3">{t("Latest Health Check")}</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <div className="flex items-center gap-2">
+                                <Stethoscope className="h-4 w-4" />
                           <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="text-lg font-semibold">{record.name}</h3>
-                              <Badge variant="outline">{record.id}</Badge>
+                                  <div className="text-sm font-medium">{t("Status")}</div>
+                                  <div className="text-sm text-muted-foreground">
+                                    {cow.lastHealthCheck.health_status}
                             </div>
-                            <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-4 w-4" />
-                                <span>
-                                  {t("Heat Date")}: {record.heatDate}
-                                </span>
                               </div>
-                              <div className="flex items-center gap-1">
-                                <CalendarIcon className="h-4 w-4" />
-                                <span>
-                                  {t("Insemination Date")}: {record.inseminationDate}
-                                </span>
                               </div>
+                              <div className="flex items-center gap-2">
+                                <Scale className="h-4 w-4" />
                               <div>
-                                <span>
-                                  {t("Bull")}: {record.bullInfo}
-                                </span>
+                                  <div className="text-sm font-medium">{t("Weight")}</div>
+                                  <div className="text-sm text-muted-foreground">
+                                    {cow.lastHealthCheck.weight} kg
+                                  </div>
+                                </div>
                               </div>
+                              <div className="flex items-center gap-2">
+                                <Activity className="h-4 w-4" />
                               <div>
-                                <span>
-                                  {t("Notes")}: {record.notes}
-                                </span>
+                                  <div className="text-sm font-medium">{t("Body Condition")}</div>
+                                  <div className="text-sm text-muted-foreground">
+                                    {cow.lastHealthCheck.body_condition_score}
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm">
-                              {t("Details")}
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              {t("Reschedule")}
-                            </Button>
+                        )}
+
+                        {/* Milestones */}
+                        <div className="border-t pt-4">
+                          <h4 className="text-sm font-semibold mb-3">{t("Upcoming Milestones")}</h4>
+                          <div className="grid gap-2">
+                            {cow.milestones
+                              .filter(m => !m.is_completed)
+                              .slice(0, 3)
+                              .map(milestone => (
+                                <div key={milestone.id} className="flex items-center justify-between text-sm bg-muted/50 p-2 rounded">
+                                  <span>{milestone.description}</span>
+                                  <span className="text-muted-foreground">
+                                    {format(new Date(milestone.due_date), 'MMM d, yyyy')}
+                                  </span>
+                                </div>
+                              ))}
                           </div>
                         </div>
+
+                        {/* Alerts */}
+                        {cow.alerts.length > 0 && (
+                          <div className="border-t pt-4">
+                            <h4 className="text-sm font-semibold mb-3">{t("Active Alerts")}</h4>
+                            <div className="space-y-2">
+                              {cow.alerts.map((alert, index) => (
+                                <div key={index} className="flex items-center gap-2 text-sm text-destructive">
+                                  <AlertCircle className="h-4 w-4" />
+                                  <span>{alert.message}</span>
                       </div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </TabsContent>
-
-          <TabsContent value="timeline" className="space-y-6">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t("Reproductive Timeline")}</CardTitle>
-                  <CardDescription>{t("Timeline of reproductive events.")}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="relative border-l border-gray-200 dark:border-gray-700 ml-3 pl-8 py-2 space-y-10">
-                    {/* Timeline items */}
-                    <div className="relative">
-                      <div className="absolute -left-11 mt-1.5 h-6 w-6 rounded-full border border-white bg-primary flex items-center justify-center">
-                        <span className="text-white text-xs">1</span>
                       </div>
-                      <time className="mb-1 text-sm font-normal leading-none text-gray-400 dark:text-gray-500">
-                        January 30, 2024
-                      </time>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {t("Insemination")} - Poppy (COW018)
-                      </h3>
-                      <p className="mb-4 text-base font-normal text-gray-500 dark:text-gray-400">
-                        {t("First insemination scheduled with Jersey Elite bull.")}
-                      </p>
-                    </div>
-                    <div className="relative">
-                      <div className="absolute -left-11 mt-1.5 h-6 w-6 rounded-full border border-white bg-primary flex items-center justify-center">
-                        <span className="text-white text-xs">2</span>
+                        )}
                       </div>
-                      <time className="mb-1 text-sm font-normal leading-none text-gray-400 dark:text-gray-500">
-                        January 18, 2024
-                      </time>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {t("Calving")} - Buttercup (COW005)
-                      </h3>
-                      <p className="mb-4 text-base font-normal text-gray-500 dark:text-gray-400">
-                        {t("Successful calving of a healthy male calf weighing 38 kg.")}
-                      </p>
                     </div>
-                    <div className="relative">
-                      <div className="absolute -left-11 mt-1.5 h-6 w-6 rounded-full border border-white bg-primary flex items-center justify-center">
-                        <span className="text-white text-xs">3</span>
-                      </div>
-                      <time className="mb-1 text-sm font-normal leading-none text-gray-400 dark:text-gray-500">
-                        January 12, 2024
-                      </time>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {t("Calving")} - Lucy (COW009)
-                      </h3>
-                      <p className="mb-4 text-base font-normal text-gray-500 dark:text-gray-400">
-                        {t("Twin calving - male and female. Requires veterinary attention.")}
-                      </p>
-                    </div>
+                  ))}
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
           </TabsContent>
         </Tabs>
       </div>

@@ -8,20 +8,61 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { useTranslation } from "@/components/providers/language-provider"
-import { Eye, Search } from "lucide-react"
+import { Eye, Pencil, Trash2, Search, Loader2 } from "lucide-react"
 import { format } from "date-fns"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
-interface AllAnimalsProps {
-  animals: any[]
-  showFilters?: boolean
+interface Cattle {
+  id: string
+  ear_tag_no: string
+  breed?: string
+  birth_date?: string
+  gender: "male" | "female"
+  life_stage: "calf" | "heifer" | "cow" | "bull"
+  dam_id?: string
+  sire_id?: string
+  is_purchased: boolean
+  purchase_date?: string
+  purchase_source?: string
+  gestation_status: "not_pregnant" | "pregnant" | "calving"
+  health_status: "healthy" | "sick"
+  last_insemination_date?: string
+  last_calving_date?: string
+  expected_calving_date?: string
+  expected_insemination_date?: string
 }
 
-export function AllAnimals({ animals, showFilters = true }: AllAnimalsProps) {
+interface AllAnimalsProps {
+  animals: Cattle[]
+  showFilters?: boolean
+  onEdit?: (cattle: Cattle) => void
+  onDelete?: (id: string) => void
+  isLoading?: boolean
+}
+
+export function AllAnimals({
+  animals,
+  showFilters = true,
+  onEdit,
+  onDelete,
+  isLoading = false,
+}: AllAnimalsProps) {
   const { t } = useTranslation()
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [genderFilter, setGenderFilter] = useState("all")
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [selectedCattleId, setSelectedCattleId] = useState<string | null>(null)
 
   const filteredAnimals = useMemo(() => {
     return animals.filter((animal) => {
@@ -50,7 +91,27 @@ export function AllAnimals({ animals, showFilters = true }: AllAnimalsProps) {
   }, [animals, searchTerm, statusFilter, genderFilter])
 
   const handleViewDetails = (id: string) => {
-    router.push(`/cattle/${id}`)
+    if (!id) return;
+    router.push(`/cattle/${id}/detail`);
+  }
+
+  const handleEdit = (cattle: Cattle) => {
+    if (onEdit) {
+      onEdit(cattle)
+    }
+  }
+
+  const handleDelete = (id: string) => {
+    setSelectedCattleId(id)
+    setDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = () => {
+    if (selectedCattleId && onDelete) {
+      onDelete(selectedCattleId)
+      setDeleteDialogOpen(false)
+      setSelectedCattleId(null)
+    }
   }
 
   const getStatusBadge = (status: string) => {
@@ -88,6 +149,14 @@ export function AllAnimals({ animals, showFilters = true }: AllAnimalsProps) {
       default:
         return <Badge variant="outline">{status}</Badge>
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-32">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
   }
 
   return (
@@ -140,7 +209,7 @@ export function AllAnimals({ animals, showFilters = true }: AllAnimalsProps) {
               <TableHead>{t("Life Stage")}</TableHead>
               <TableHead>{t("Status")}</TableHead>
               <TableHead>{t("Health")}</TableHead>
-              <TableHead>{t("Actions")}</TableHead>
+              <TableHead className="text-right">{t("Actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -160,11 +229,30 @@ export function AllAnimals({ animals, showFilters = true }: AllAnimalsProps) {
                   <TableCell>{t(animal.life_stage.charAt(0).toUpperCase() + animal.life_stage.slice(1))}</TableCell>
                   <TableCell>{getStatusBadge(animal.gestation_status)}</TableCell>
                   <TableCell>{getStatusBadge(animal.health_status)}</TableCell>
-                  <TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
                     <Button variant="ghost" size="sm" onClick={() => handleViewDetails(animal.id)}>
-                      <Eye className="h-4 w-4 mr-1" />
-                      {t("View")}
+                        <Eye className="h-4 w-4" />
+                        <span className="sr-only">{t("View")}</span>
+                      </Button>
+                      {onEdit && (
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(animal)}>
+                          <Pencil className="h-4 w-4" />
+                          <span className="sr-only">{t("Edit")}</span>
+                        </Button>
+                      )}
+                      {onDelete && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900"
+                          onClick={() => handleDelete(animal.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">{t("Delete")}</span>
                     </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -172,6 +260,26 @@ export function AllAnimals({ animals, showFilters = true }: AllAnimalsProps) {
           </TableBody>
         </Table>
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("Delete Cattle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("Are you sure you want to delete this cattle? This action cannot be undone.")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("Cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-500 hover:bg-red-600 text-white"
+              onClick={confirmDelete}
+            >
+              {t("Delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div> 
   )
 }
