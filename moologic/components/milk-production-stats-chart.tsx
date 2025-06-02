@@ -10,6 +10,7 @@ import { useTheme } from "@/components/providers/theme-provider"
 import { useMobile } from "@/hooks/use-mobile"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
+import { MilkYieldReport } from "./milk-yield-report"
 
 interface ProductionStats {
   morningAvg: number
@@ -185,6 +186,7 @@ export function MilkProductionStatsChart({ data = [], isLoading = false }: MilkP
             <CardTitle>Production Statistics</CardTitle>
             <CardDescription>Detailed milk production analysis</CardDescription>
           </div>
+          <div className="flex items-center gap-4">
           <Select value={selectedView} onValueChange={(value: "daily" | "weekly" | "shift") => setSelectedView(value)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Select view" />
@@ -195,12 +197,35 @@ export function MilkProductionStatsChart({ data = [], isLoading = false }: MilkP
               <SelectItem value="shift">Shift Analysis</SelectItem>
             </SelectContent>
           </Select>
+            {farmProduction && (
+              <MilkYieldReport
+                data={{
+                  milkRecords: farmProduction,
+                  totalProduction: stats.averageProduction * data.length,
+                  averageDaily: stats.averageProduction,
+                  activeCattle: farmProduction.reduce((acc, curr) => {
+                    if (!acc.includes(curr.ear_tag_no)) {
+                      acc.push(curr.ear_tag_no);
+                    }
+                    return acc;
+                  }, [] as string[]).length,
+                  efficiency: stats.averageEfficiency,
+                  periodStart: data[0]?.date,
+                  periodEnd: data[data.length - 1]?.date,
+                  morningAverage: calculateStats()?.morningAvg,
+                  eveningAverage: calculateStats()?.eveningAvg,
+                  peakProduction: stats.peakProduction,
+                  productionTrend: stats.productionTrend
+                }}
+              />
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-8">
           <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height="100%">
               {selectedView === "shift" ? (
                 <BarChart data={prepareChartData()} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -242,7 +267,7 @@ export function MilkProductionStatsChart({ data = [], isLoading = false }: MilkP
                     tick={{ fontSize: 12 }}
                     label={{ value: 'Efficiency %', angle: 90, position: 'insideRight' }}
                   />
-                  <Tooltip
+        <Tooltip
                     contentStyle={{
                       backgroundColor: 'rgba(255, 255, 255, 0.8)',
                       border: '1px solid #ccc',
@@ -253,8 +278,8 @@ export function MilkProductionStatsChart({ data = [], isLoading = false }: MilkP
                         return [`${value.toFixed(1)}%`, name];
                       }
                       return [`${value.toFixed(1)} L`, name];
-                    }}
-                  />
+          }}
+        />
                   <Legend />
                   <Bar
                     yAxisId="left"
@@ -274,9 +299,9 @@ export function MilkProductionStatsChart({ data = [], isLoading = false }: MilkP
                     fill="#16a34a"
                     name="Efficiency %"
                   />
-                </BarChart>
+      </BarChart>
               )}
-            </ResponsiveContainer>
+    </ResponsiveContainer>
           </div>
 
           {selectedView === "daily" && (

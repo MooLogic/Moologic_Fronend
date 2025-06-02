@@ -51,6 +51,7 @@ interface LactatingCattle {
 }
 
 interface CowProduction {
+  id: string;
   ear_tag_no: string;
   totalProduction: number;
   recordCount: number;
@@ -186,13 +187,16 @@ export function MilkYieldDashboard() {
     const cowProduction: { [key: string]: CowProduction } = {}
     milkRecords.forEach((record: MilkRecord) => {
       if (!cowProduction[record.ear_tag_no]) {
+        // Find the cattle ID from lactatingCattleResponse
+        const cattle = lactatingCattleResponse.results.find(c => c.ear_tag_no === record.ear_tag_no)
         cowProduction[record.ear_tag_no] = {
+          id: cattle?.id || '',
           ear_tag_no: record.ear_tag_no,
           totalProduction: 0,
           recordCount: 0,
           averageProduction: 0
-        }
-      }
+    }
+  }
       cowProduction[record.ear_tag_no].totalProduction += record.quantity
       cowProduction[record.ear_tag_no].recordCount++
     })

@@ -327,31 +327,31 @@ export function MilkRecords() {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
+          <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Today's Records</CardTitle>
-          </CardHeader>
-          <CardContent>
+            </CardHeader>
+            <CardContent>
             <div className="text-2xl font-bold">{todayStats?.records_count || 0}</div>
-          </CardContent>
-        </Card>
-        <Card>
+            </CardContent>
+          </Card>
+          <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Today's Total Production</CardTitle>
-          </CardHeader>
-          <CardContent>
+            </CardHeader>
+            <CardContent>
             <div className="text-2xl font-bold">{Number(todayStats?.total_production || 0).toFixed(1)} L</div>
-          </CardContent>
-        </Card>
-        <Card>
+            </CardContent>
+          </Card>
+          <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Milking Cattle</CardTitle>
-          </CardHeader>
-          <CardContent>
+            </CardHeader>
+            <CardContent>
             <div className="text-2xl font-bold">{todayStats?.active_milking_cattle || 0}</div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
@@ -362,7 +362,7 @@ export function MilkRecords() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="max-w-sm"
           />
-        </div>
+          </div>
         <Select value={shiftFilter} onValueChange={setShiftFilter}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by shift" />
@@ -376,7 +376,7 @@ export function MilkRecords() {
         </Select>
         <Button variant="outline" onClick={handleExportToPDF}>
           <Download className="mr-2 h-4 w-4" /> Export to PDF
-        </Button>
+          </Button>
       </div>
 
       {/* Records Table */}
@@ -425,7 +425,7 @@ export function MilkRecords() {
                       }}
                     >
                       <Edit className="h-4 w-4" />
-                    </Button>
+          </Button>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -435,24 +435,24 @@ export function MilkRecords() {
                       }}
                     >
                       <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
+              </Button>
                   </div>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
-      </div>
+                </div>
 
       {/* Add Record Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent>
-          <DialogHeader>
+                  <DialogHeader>
             <DialogTitle>Add Milk Record</DialogTitle>
-            <DialogDescription>
+                    <DialogDescription>
               Add a new milk record for a lactating cattle
-            </DialogDescription>
-          </DialogHeader>
+                    </DialogDescription>
+                  </DialogHeader>
           {validationError && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -464,10 +464,10 @@ export function MilkRecords() {
             <div>
               <Label htmlFor="cattle">Select Cattle</Label>
               <Select value={selectedCattle} onValueChange={setSelectedCattle}>
-                <SelectTrigger>
+                          <SelectTrigger>
                   <SelectValue placeholder="Select a cattle" />
-                </SelectTrigger>
-                <SelectContent>
+                          </SelectTrigger>
+                          <SelectContent>
                   {lactatingCattle.map((cattle: LactatingCattle) => (
                     <SelectItem 
                       key={cattle.ear_tag_no} 
@@ -476,50 +476,50 @@ export function MilkRecords() {
                     >
                       {cattle.ear_tag_no} - {cattle.name} 
                       {!cattle.can_milk_now && " (Must wait)"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
             <div>
               <Label htmlFor="quantity">Quantity (L)</Label>
-              <Input
-                id="quantity"
-                type="number"
-                step="0.1"
+                      <Input
+                        id="quantity"
+                        type="number"
+                        step="0.1"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
-              />
-            </div>
+                      />
+                    </div>
             <div>
               <Label htmlFor="shift">Shift</Label>
               <Select value={shift} onValueChange={setShift}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select shift" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="morning">Morning</SelectItem>
-                  <SelectItem value="afternoon">Afternoon</SelectItem>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select shift" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="morning">Morning</SelectItem>
+                            <SelectItem value="afternoon">Afternoon</SelectItem>
                   <SelectItem value="evening">Evening</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                          </SelectContent>
+                        </Select>
+                      </div>
             <Button onClick={handleAddRecord} className="w-full">
               Add Record
             </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+                  </div>
+            </DialogContent>
+          </Dialog>
 
       {/* Edit Record Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Milk Record</DialogTitle>
-            <DialogDescription>
+                <DialogHeader>
+                  <DialogTitle>Edit Milk Record</DialogTitle>
+                  <DialogDescription>
               Modify the existing milk production record.
-            </DialogDescription>
-          </DialogHeader>
+                  </DialogDescription>
+                </DialogHeader>
           {validationError && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -531,10 +531,10 @@ export function MilkRecords() {
             <div>
               <Label htmlFor="cattle">Select Cattle</Label>
               <Select value={selectedCattle} onValueChange={setSelectedCattle}>
-                <SelectTrigger>
+                        <SelectTrigger>
                   <SelectValue placeholder="Select a cattle" />
-                </SelectTrigger>
-                <SelectContent>
+                        </SelectTrigger>
+                        <SelectContent>
                   {lactatingCattle.map((cattle: LactatingCattle) => (
                     <SelectItem 
                       key={cattle.ear_tag_no} 
@@ -543,43 +543,43 @@ export function MilkRecords() {
                     >
                       {cattle.ear_tag_no} - {cattle.name} 
                       {!cattle.can_milk_now && " (Must wait)"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
             <div>
               <Label htmlFor="quantity">Quantity (L)</Label>
-              <Input
-                id="quantity"
-                type="number"
-                step="0.1"
+                    <Input
+                      id="quantity"
+                      type="number"
+                      step="0.1"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
-              />
-            </div>
+                    />
+                  </div>
             <div>
               <Label htmlFor="shift">Shift</Label>
               <Select value={shift} onValueChange={setShift}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select shift" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="morning">Morning</SelectItem>
-                  <SelectItem value="afternoon">Afternoon</SelectItem>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select shift" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="morning">Morning</SelectItem>
+                          <SelectItem value="afternoon">Afternoon</SelectItem>
                   <SelectItem value="evening">Evening</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
+                        </SelectContent>
+                      </Select>
+                  </div>
+                </div>
+                <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              Cancel
-            </Button>
+                    Cancel
+                  </Button>
             <Button onClick={handleEditRecord}>Save Changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
@@ -614,18 +614,18 @@ function LoadingState() {
         ))}
       </div>
       <Skeleton className="h-12 w-full mb-6" />
-      <div className="bg-white rounded-lg border overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
+        <div className="bg-white rounded-lg border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
               {["Cattle ID", "Date", "Time", "Shift", "Quantity (L)", "Schedule", "Actions"].map((header, i) => (
                 <TableHead key={i}>
                   <Skeleton className="h-6 w-24" />
                 </TableHead>
               ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
             {[...Array(5)].map((_, i) => (
               <TableRow key={i}>
                 {[...Array(7)].map((_, j) => (
@@ -633,11 +633,11 @@ function LoadingState() {
                     <Skeleton className="h-6 w-24" />
                   </TableCell>
                 ))}
-              </TableRow>
+                </TableRow>
             ))}
-          </TableBody>
-        </Table>
+            </TableBody>
+          </Table>
+        </div>
       </div>
-    </div>
   )
 }

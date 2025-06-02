@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { useMobile } from "@/hooks/use-mobile"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useRouter } from "next/navigation"
 
 interface LactatingCattle {
   id: number;
@@ -33,6 +34,7 @@ interface LessPerformingTableProps {
 
 export function LessPerformingTable({ data = [], milkRecords = [], isLoading = false }: LessPerformingTableProps) {
   const isMobile = useMobile()
+  const router = useRouter()
 
   if (isLoading) {
     return <TableSkeleton isMobile={isMobile} />
@@ -87,7 +89,7 @@ export function LessPerformingTable({ data = [], milkRecords = [], isLoading = f
                 {row.difference > 0 ? "+" : ""}{row.difference.toFixed(1)}%
               </span>
             </div>
-            <Button variant="link" className="text-indigo-600 hover:text-indigo-700 p-0">
+            <Button variant="link" className="text-indigo-600 hover:text-indigo-700 p-0" onClick={() => router.push(`/milk-yield/cattle/${row.id}`)}>
               Detail
             </Button>
           </div>
@@ -118,7 +120,7 @@ export function LessPerformingTable({ data = [], milkRecords = [], isLoading = f
                 {row.difference > 0 ? "+" : ""}{row.difference.toFixed(1)}%
               </TableCell>
               <TableCell>
-                <Button variant="link" className="text-indigo-600 hover:text-indigo-700">
+                <Button variant="link" className="text-indigo-600 hover:text-indigo-700" onClick={() => router.push(`/milk-yield/cattle/${row.id}`)}>
                   Detail
                 </Button>
               </TableCell>
