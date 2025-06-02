@@ -9,20 +9,94 @@ import { ExpenseCategoryChart } from "@/components/expense-category-chart"
 import { IncomeCategoryChart } from "@/components/income-category-chart"
 import { CashFlowChart } from "@/components/cash-flow-chart"
 import { useTranslation } from "@/components/providers/language-provider"
+import { useEffect, useState } from "react"
+import { useSession } from "next-auth/react"
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+
+// Create API slice for financial overview
+export const financeOverviewApi = createApi({
+  reducerPath: 'financeOverviewApi',
+  baseQuery: fetchBaseQuery({
+    baseUrl: process.env.NEXT_PUBLIC_BASE_URL || 'http://127.0.0.1:8000/',
+  }),
+  endpoints: (builder) => ({
+    getTotalIncome: builder.query<{ sum: number }, string>({
+      query: (accessToken) => ({
+        url: 'financial/income/total/',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }),
+    }),
+    getTotalExpense: builder.query<{ sum: number }, string>({
+      query: (accessToken) => ({
+        url: 'financial/expense/total/',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }),
+    }),
+    getProfitSnapshot: builder.query<{
+      total_income: number;
+      total_expense: number;
+      net_profit: number;
+    }, { accessToken: string; farmId: number }>({
+      query: ({ accessToken, farmId }) => ({
+        url: `financial/profit/snapshot/?farm_id=${farmId}`,
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }),
+    }),
+    getMonthlyFinanceSummary: builder.query<{
+      month: string;
+      income: number;
+      expenses: number;
+      cashFlow: number;
+    }[], string>({
+      query: (accessToken) => ({
+        url: 'financial/monthly-summary/',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }),
+    }),
+  }),
+})
+
+export const {
+  useGetTotalIncomeQuery,
+  useGetTotalExpenseQuery,
+  useGetProfitSnapshotQuery,
+  useGetMonthlyFinanceSummaryQuery,
+} = financeOverviewApi
 
 export function FinanceOverview() {
   const { t } = useTranslation()
+  const { data: session } = useSession()
+  const accessToken = session?.user?.accessToken || ""
+  const farmId = 1 // Replace with actual farm ID from your app state
 
-  // Sample financial data
-  const financialData = {
-    totalIncome: 125000,
-    totalExpenses: 85000,
-    netProfit: 40000,
-    profitMargin: 32,
-    cashOnHand: 65000,
-    pendingPayments: 12000,
-    pendingReceipts: 8000,
+  const { data: totalIncomeData, isLoading: isLoadingIncome } = useGetTotalIncomeQuery(accessToken)
+  const { data: totalExpenseData, isLoading: isLoadingExpense } = useGetTotalExpenseQuery(accessToken)
+  const { data: profitData, isLoading: isLoadingProfit } = useGetProfitSnapshotQuery({
+    accessToken,
+    farmId,
+  })
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'ETB',
+    }).format(amount)
   }
+
+  // Calculate profit margin
+  const calculateProfitMargin = () => {
+    if (!profitData?.total_income || !profitData?.net_profit) return 0;
+    return ((profitData.net_profit / profitData.total_income) * 100) || 0;
+  };
 
   return (
     <div className="space-y-6">
@@ -42,7 +116,13 @@ export function FinanceOverview() {
             <CardTitle className="text-sm font-medium text-gray-500">{t("Total Income")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${financialData.totalIncome.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              {isLoadingIncome ? (
+                "Loading..."
+              ) : (
+                formatCurrency(totalIncomeData?.sum || 0)
+              )}
+            </div>
             <div className="flex items-center mt-1 text-green-600 text-sm">
               <TrendingUp className="h-4 w-4 mr-1" />
               <span>+8% {t("from last period")}</span>
@@ -54,7 +134,13 @@ export function FinanceOverview() {
             <CardTitle className="text-sm font-medium text-gray-500">{t("Total Expenses")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${financialData.totalExpenses.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              {isLoadingExpense ? (
+                "Loading..."
+              ) : (
+                formatCurrency(totalExpenseData?.sum || 0)
+              )}
+            </div>
             <div className="flex items-center mt-1 text-red-600 text-sm">
               <TrendingUp className="h-4 w-4 mr-1" />
               <span>+5% {t("from last period")}</span>
@@ -66,7 +152,15 @@ export function FinanceOverview() {
             <CardTitle className="text-sm font-medium text-gray-500">{t("Net Profit")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${financialData.netProfit.toLocaleString()}</div>
+            <div className={`text-2xl font-bold ${
+              (profitData?.net_profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+            }`}>
+              {isLoadingProfit ? (
+                "Loading..."
+              ) : (
+                formatCurrency(profitData?.net_profit || 0)
+              )}
+            </div>
             <div className="flex items-center mt-1 text-green-600 text-sm">
               <TrendingUp className="h-4 w-4 mr-1" />
               <span>+15% {t("from last period")}</span>
@@ -78,7 +172,9 @@ export function FinanceOverview() {
             <CardTitle className="text-sm font-medium text-gray-500">{t("Profit Margin")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{financialData.profitMargin}%</div>
+            <div className="text-2xl font-bold">
+              {isLoadingProfit ? "Loading..." : `${calculateProfitMargin().toFixed(2)}%`}
+            </div>
             <div className="flex items-center mt-1 text-green-600 text-sm">
               <TrendingUp className="h-4 w-4 mr-1" />
               <span>+3% {t("from last period")}</span>
@@ -135,37 +231,6 @@ export function FinanceOverview() {
             <div className="h-[350px]">
               <IncomeCategoryChart />
             </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Additional Financial Info */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("Cash on Hand")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${financialData.cashOnHand.toLocaleString()}</div>
-            <p className="text-sm text-gray-500 mt-2">{t("Available cash for operations")}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("Pending Payments")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${financialData.pendingPayments.toLocaleString()}</div>
-            <p className="text-sm text-gray-500 mt-2">{t("Upcoming expenses to be paid")}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("Pending Receipts")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${financialData.pendingReceipts.toLocaleString()}</div>
-            <p className="text-sm text-gray-500 mt-2">{t("Expected income to be received")}</p>
           </CardContent>
         </Card>
       </div>

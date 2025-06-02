@@ -72,18 +72,27 @@ const budgetItems = [
   },
 ]
 
+interface BudgetItem {
+  id: number;
+  category: string;
+  budgeted: number;
+  actual: number;
+  remaining: number;
+  period: string;
+}
+
 export function BudgetManagement() {
   const { t } = useTranslation()
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [selectedBudget, setSelectedBudget] = useState(null)
+  const [selectedBudget, setSelectedBudget] = useState<BudgetItem | null>(null)
 
-  const handleDelete = (budget) => {
+  const handleDelete = (budget: BudgetItem) => {
     setSelectedBudget(budget)
     setIsDeleteDialogOpen(true)
   }
 
-  const handleEdit = (budget) => {
+  const handleEdit = (budget: BudgetItem) => {
     setSelectedBudget(budget)
     setIsAddDialogOpen(true)
   }
@@ -101,45 +110,6 @@ export function BudgetManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Budget Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">{t("Total Budgeted")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${totalBudgeted.toLocaleString()}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">{t("Total Spent")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${totalActual.toLocaleString()}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">{t("Remaining Budget")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${totalRemaining >= 0 ? "text-green-600" : "text-red-600"}`}>
-              ${totalRemaining.toLocaleString()}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">{t("Budget Utilization")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold mb-2">{budgetUtilization.toFixed(1)}%</div>
-            <Progress value={budgetUtilization} className="h-2" />
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Budget Table Header */}
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">{t("Budget Items")}</h2>
