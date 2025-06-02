@@ -1,10 +1,11 @@
-"use client"
+// components/IncomeExpenseRecords.tsx
+"use client";
 
-import { useState } from "react"
-import { Plus, Search, Edit, Trash2, Download } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useState, useEffect } from "react";
+import { Plus, Search, Edit, Trash2, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -13,127 +14,246 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { DatePicker } from "@/components/date-picker"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useTranslation } from "@/components/providers/language-provider"
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { DatePicker } from "@/components/date-picker";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTranslation } from "@/components/providers/language-provider";
+import { 
+  useCreateIncomeMutation,
+  useUpdateIncomeMutation,
+  useDeleteIncomeMutation,
+  useListIncomeQuery,
+  useCreateExpenseMutation,
+  useUpdateExpenseMutation,
+  useDeleteExpenseMutation,
+  useListExpenseQuery,
+} from "@/lib/service/incomeExpense";
+import { useSession } from "next-auth/react";
 
-// Sample data
-const incomeRecords = [
-  {
-    id: 1,
-    date: "2024-03-15",
-    category: "Milk Sales",
-    amount: 3500,
-    description: "Milk sales for first half of March",
-    paymentMethod: "Bank Transfer",
-  },
-  {
-    id: 2,
-    date: "2024-03-10",
-    category: "Cattle Sales",
-    amount: 5000,
-    description: "Sale of 2 heifers",
-    paymentMethod: "Check",
-  },
-  {
-    id: 3,
-    date: "2024-03-05",
-    category: "Milk Sales",
-    amount: 3200,
-    description: "Milk sales for second half of February",
-    paymentMethod: "Bank Transfer",
-  },
-  {
-    id: 4,
-    date: "2024-02-28",
-    category: "Government Subsidies",
-    amount: 1500,
-    description: "Quarterly dairy subsidy payment",
-    paymentMethod: "Bank Transfer",
-  },
-  {
-    id: 5,
-    date: "2024-02-20",
-    category: "Manure",
-    amount: 800,
-    description: "Sale of manure to local farmers",
-    paymentMethod: "Cash",
-  },
-]
+// Define interfaces for our record types
+interface Record {
+  id: number;
+  date: string;
+  category_name: string;
+  amount: number;
+  description?: string;
+}
 
-const expenseRecords = [
-  {
-    id: 1,
-    date: "2024-03-14",
-    category: "Feed",
-    amount: 2800,
-    description: "Monthly feed supply",
-    paymentMethod: "Bank Transfer",
-  },
-  {
-    id: 2,
-    date: "2024-03-12",
-    category: "Veterinary",
-    amount: 950,
-    description: "Routine health check and vaccinations",
-    paymentMethod: "Credit Card",
-  },
-  {
-    id: 3,
-    date: "2024-03-08",
-    category: "Labor",
-    amount: 3500,
-    description: "Staff salaries for February",
-    paymentMethod: "Bank Transfer",
-  },
-  {
-    id: 4,
-    date: "2024-03-05",
-    category: "Utilities",
-    amount: 750,
-    description: "Electricity and water bills",
-    paymentMethod: "Bank Transfer",
-  },
-  {
-    id: 5,
-    date: "2024-02-28",
-    category: "Equipment",
-    amount: 1200,
-    description: "Repair of milking machine",
-    paymentMethod: "Credit Card",
-  },
-]
+interface DatePickerProps {
+  date: Date | undefined;
+  setDate: (date: Date | undefined) => void;
+}
 
 export function IncomeExpenseRecords() {
-  const { t } = useTranslation()
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [selectedRecord, setSelectedRecord] = useState(null)
-  const [recordType, setRecordType] = useState("income")
+  const { t } = useTranslation();
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
+  const [recordType, setRecordType] = useState<"income" | "expense">("income");
 
-  const handleDelete = (record, type) => {
-    setSelectedRecord(record)
-    setRecordType(type)
-    setIsDeleteDialogOpen(true)
-  }
+  // State for form inputs
+  const [recordDate, setRecordDate] = useState<Date | undefined>(undefined);
+  const [recordCategory, setRecordCategory] = useState("");
+  const [recordAmount, setRecordAmount] = useState<string>("");
+  const [recordDescription, setRecordDescription] = useState("");
 
-  const handleEdit = (record, type) => {
-    setSelectedRecord(record)
-    setRecordType(type)
-    setIsAddDialogOpen(true)
-  }
+  // State for displaying success/error messages
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const confirmDelete = () => {
-    // Delete logic would go here
-    setIsDeleteDialogOpen(false)
-  }
+  // Get access token from session
+  const { data: session } = useSession();
+  const accessToken = session?.user?.accessToken || "";
+
+  // IMPORTANT: Replace this with dynamic farm ID from your application state/context
+  const farmId = 1;
+
+  // Initialize API hooks
+  const [createIncome] = useCreateIncomeMutation();
+  const [updateIncome] = useUpdateIncomeMutation();
+  const [deleteIncome] = useDeleteIncomeMutation();
+  const { data: incomeData, refetch: refetchIncome } = useListIncomeQuery(accessToken);
+
+  const [createExpense] = useCreateExpenseMutation();
+  const [updateExpense] = useUpdateExpenseMutation();
+  const [deleteExpense] = useDeleteExpenseMutation();
+  const { data: expenseData, refetch: refetchExpense } = useListExpenseQuery(accessToken);
+
+  // Handle delete operation
+  const handleDelete = (record: Record, type: "income" | "expense") => {
+    setSelectedRecord(record);
+    setRecordType(type);
+    setIsDeleteDialogOpen(true);
+  };
+
+  // Handle edit operation
+  const handleEdit = (record: Record, type: "income" | "expense") => {
+    setSelectedRecord(record);
+    setRecordType(type);
+    setRecordDate(record.date ? new Date(record.date) : undefined);
+    setRecordCategory(record.category_name);
+    setRecordAmount(record.amount.toString());
+    setRecordDescription(record.description || "");
+    setIsAddDialogOpen(true);
+  };
+
+  // Confirm delete operation
+  const confirmDelete = async () => {
+    if (!selectedRecord) return;
+
+    try {
+      if (recordType === "income") {
+        await deleteIncome({
+          accessToken,
+          income_id: selectedRecord.id,
+        }).unwrap();
+        refetchIncome();
+      } else {
+        await deleteExpense({
+          accessToken,
+          expense_id: selectedRecord.id,
+        }).unwrap();
+        refetchExpense();
+      }
+      setShowSuccessMessage(true);
+      setErrorMessage("");
+      setTimeout(() => setShowSuccessMessage(false), 3000);
+    } catch (err: any) {
+      setErrorMessage(err.data?.detail || "Failed to delete record");
+    }
+    setIsDeleteDialogOpen(false);
+  };
+
+  // Handle add/update record
+  const handleAddRecord = async () => {
+    setShowSuccessMessage(false);
+    setErrorMessage("");
+
+    if (!accessToken) {
+      setErrorMessage("You must be logged in to perform this action");
+      return;
+    }
+
+    if (!recordDate || !recordCategory || !recordAmount) {
+      setErrorMessage("Please fill in all required fields");
+      return;
+    }
+
+    // Validate amount is a valid number
+    const parsedAmount = parseFloat(recordAmount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      setErrorMessage("Please enter a valid amount greater than 0");
+      return;
+    }
+
+    try {
+      const recordData = {
+        accessToken,
+        date: recordDate.toISOString().split('T')[0],
+        category_name: recordCategory,
+        amount: parsedAmount,
+        description: recordDescription || undefined,
+        farm_id: farmId,
+      };
+
+      console.log('Attempting to save record with data:', {
+        ...recordData,
+        accessToken: 'TOKEN_HIDDEN',
+      });
+
+      let result;
+      if (recordType === "income") {
+        if (selectedRecord) {
+          console.log('Updating income record...');
+          result = await updateIncome({
+            ...recordData,
+            income_id: selectedRecord.id,
+          }).unwrap();
+          console.log('Update income result:', result);
+        } else {
+          console.log('Creating new income record...');
+          result = await createIncome(recordData).unwrap();
+          console.log('Create income result:', result);
+        }
+        console.log('Refreshing income list...');
+        await refetchIncome();
+      } else {
+        if (selectedRecord) {
+          console.log('Updating expense record...');
+          result = await updateExpense({
+            ...recordData,
+            expense_id: selectedRecord.id,
+          }).unwrap();
+          console.log('Update expense result:', result);
+        } else {
+          console.log('Creating new expense record...');
+          result = await createExpense(recordData).unwrap();
+          console.log('Create expense result:', result);
+        }
+        console.log('Refreshing expense list...');
+        await refetchExpense();
+      }
+
+      console.log('Operation completed successfully');
+      setShowSuccessMessage(true);
+      setIsAddDialogOpen(false);
+      setSelectedRecord(null);
+      clearForm();
+
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 3000);
+    } catch (err: any) {
+      console.error('Error details:', {
+        name: err.name,
+        message: err.message,
+        stack: err.stack,
+        data: err.data,
+        status: err.status,
+      });
+      
+      let errorMsg = 'An error occurred while saving the record.';
+      
+      if (err.data?.detail) {
+        errorMsg = err.data.detail;
+      } else if (err.data?.error) {
+        errorMsg = err.data.error;
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+
+      // Check for specific error conditions
+      if (err.status === 401) {
+        errorMsg = 'Your session has expired. Please log in again.';
+      } else if (err.status === 403) {
+        errorMsg = 'You do not have permission to perform this action.';
+      } else if (err.status === 400) {
+        errorMsg = 'Invalid data provided. Please check your input.';
+      }
+      
+      setErrorMessage(errorMsg);
+      console.error('Final error message:', errorMsg);
+    }
+  };
+
+  // Clear form fields
+  const clearForm = () => {
+    setRecordDate(undefined);
+    setRecordCategory("");
+    setRecordAmount("");
+    setRecordDescription("");
+  };
+
+  // Fix for the Tabs onValueChange type error
+  const handleTabChange = (value: string) => {
+    setRecordType(value as "income" | "expense");
+  };
 
   return (
     <div>
-      <Tabs defaultValue="income" className="w-full" onValueChange={setRecordType}>
+      <Tabs defaultValue="income" className="w-full" onValueChange={handleTabChange}>
         <div className="flex justify-between items-center mb-6">
           <TabsList className="grid w-[400px] grid-cols-2">
             <TabsTrigger value="income">{t("Income")}</TabsTrigger>
@@ -147,7 +267,7 @@ export function IncomeExpenseRecords() {
             </Button>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-indigo-600 hover:bg-indigo-700">
+                <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={() => setSelectedRecord(null)}>
                   <Plus className="h-5 w-5 mr-2" />
                   {recordType === "income" ? t("Add Income") : t("Add Expense")}
                 </Button>
@@ -173,7 +293,7 @@ export function IncomeExpenseRecords() {
                       {t("Date")}
                     </Label>
                     <div className="col-span-3">
-                      <DatePicker />
+                      <DatePicker value={recordDate} onChange={setRecordDate} />
                     </div>
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
@@ -181,7 +301,7 @@ export function IncomeExpenseRecords() {
                       {t("Category")}
                     </Label>
                     <div className="col-span-3">
-                      <Select defaultValue={selectedRecord?.category || ""}>
+                      <Select value={recordCategory} onValueChange={setRecordCategory}>
                         <SelectTrigger>
                           <SelectValue placeholder={t("Select category")} />
                         </SelectTrigger>
@@ -220,7 +340,8 @@ export function IncomeExpenseRecords() {
                         type="number"
                         min="0"
                         step="0.01"
-                        defaultValue={selectedRecord?.amount || ""}
+                        value={recordAmount}
+                        onChange={(e) => setRecordAmount(e.target.value)}
                         className="pl-8"
                       />
                     </div>
@@ -229,26 +350,12 @@ export function IncomeExpenseRecords() {
                     <Label htmlFor="description" className="text-right">
                       {t("Description")}
                     </Label>
-                    <Input id="description" defaultValue={selectedRecord?.description || ""} className="col-span-3" />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="paymentMethod" className="text-right">
-                      {t("Payment Method")}
-                    </Label>
-                    <div className="col-span-3">
-                      <Select defaultValue={selectedRecord?.paymentMethod || ""}>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("Select payment method")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Cash">{t("Cash")}</SelectItem>
-                          <SelectItem value="Bank Transfer">{t("Bank Transfer")}</SelectItem>
-                          <SelectItem value="Credit Card">{t("Credit Card")}</SelectItem>
-                          <SelectItem value="Check">{t("Check")}</SelectItem>
-                          <SelectItem value="Other">{t("Other")}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <Input
+                      id="description"
+                      value={recordDescription}
+                      onChange={(e) => setRecordDescription(e.target.value)}
+                      className="col-span-3"
+                    />
                   </div>
                 </div>
                 <DialogFooter>
@@ -256,8 +363,9 @@ export function IncomeExpenseRecords() {
                     type="button"
                     variant="outline"
                     onClick={() => {
-                      setIsAddDialogOpen(false)
-                      setSelectedRecord(null)
+                      setIsAddDialogOpen(false);
+                      setSelectedRecord(null);
+                      clearForm();
                     }}
                   >
                     {t("Cancel")}
@@ -265,10 +373,7 @@ export function IncomeExpenseRecords() {
                   <Button
                     type="submit"
                     className="bg-indigo-600 hover:bg-indigo-700"
-                    onClick={() => {
-                      setIsAddDialogOpen(false)
-                      setSelectedRecord(null)
-                    }}
+                    onClick={handleAddRecord}
                   >
                     {selectedRecord ? t("Update Record") : t("Add Record")}
                   </Button>
@@ -277,6 +382,20 @@ export function IncomeExpenseRecords() {
             </Dialog>
           </div>
         </div>
+
+        {/* Error Message Display */}
+        {errorMessage && (
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-center">
+            {errorMessage}
+          </div>
+        )}
+
+        {/* Success Message Display */}
+        {showSuccessMessage && (
+          <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-md text-center">
+            {recordType === "income" ? t("Income successfully saved!") : t("Expense successfully saved!")}
+          </div>
+        )}
 
         {/* Search Bar */}
         <div className="relative flex-1 max-w-md mb-6">
@@ -294,18 +413,16 @@ export function IncomeExpenseRecords() {
                   <TableHead>{t("Category")}</TableHead>
                   <TableHead>{t("Amount")}</TableHead>
                   <TableHead>{t("Description")}</TableHead>
-                  <TableHead>{t("Payment Method")}</TableHead>
                   <TableHead className="text-right">{t("Actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {incomeRecords.map((record) => (
+                {incomeData?.map((record) => (
                   <TableRow key={record.id}>
                     <TableCell>{record.date}</TableCell>
-                    <TableCell>{t(record.category)}</TableCell>
-                    <TableCell className="font-medium">${record.amount.toLocaleString()}</TableCell>
+                    <TableCell>{t(record.category_name)}</TableCell>
+                    <TableCell className="font-medium">ETB {record.amount.toLocaleString()}</TableCell>
                     <TableCell className="max-w-[300px] truncate">{record.description}</TableCell>
-                    <TableCell>{t(record.paymentMethod)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(record, "income")}>
@@ -333,18 +450,16 @@ export function IncomeExpenseRecords() {
                   <TableHead>{t("Category")}</TableHead>
                   <TableHead>{t("Amount")}</TableHead>
                   <TableHead>{t("Description")}</TableHead>
-                  <TableHead>{t("Payment Method")}</TableHead>
                   <TableHead className="text-right">{t("Actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {expenseRecords.map((record) => (
+                {expenseData?.map((record) => (
                   <TableRow key={record.id}>
                     <TableCell>{record.date}</TableCell>
-                    <TableCell>{t(record.category)}</TableCell>
-                    <TableCell className="font-medium">${record.amount.toLocaleString()}</TableCell>
+                    <TableCell>{t(record.category_name)}</TableCell>
+                    <TableCell className="font-medium">ETB {record.amount.toLocaleString()}</TableCell>
                     <TableCell className="max-w-[300px] truncate">{record.description}</TableCell>
-                    <TableCell>{t(record.paymentMethod)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(record, "expense")}>
@@ -383,6 +498,5 @@ export function IncomeExpenseRecords() {
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }
-

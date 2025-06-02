@@ -37,4 +37,3 @@ export function DatePicker({ value, onChange, placeholder = "Pick a date" }: Dat
     </Popover>
   )
 }
-

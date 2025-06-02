@@ -25,7 +25,7 @@ export const store = configureStore({
     alert: alertReducer,
     farm: farmReducer,
     [cattleApi.reducerPath]: cattleApi.reducer,
-    [inseminationApi.reducerPath]: inseminationApi.reducer,
+    [inseminationApi.reducerPath]: inseminationApi.reducer, // Add inseminationApi reducer
     [milkApi.reducerPath]: milkApi.reducer,
     [healthApi.reducerPath]: healthApi.reducer,
   },
@@ -34,6 +34,8 @@ export const store = configureStore({
       serializableCheck: false,
     }).concat(cattleApi.middleware, inseminationApi.middleware, milkApi.middleware, healthApi.middleware),
 });
+
+setupListeners(store.dispatch);
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

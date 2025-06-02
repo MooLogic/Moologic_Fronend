@@ -14,6 +14,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { useDispatch } from "react-redux"
 import { setPrediction } from "@/redux/features/disease/diseaseSlice"
 import { useSession } from "next-auth/react"
+import { getAIInsights } from "@/lib/service/ai-service"
 
 interface PredictionResultType {
   disease: string;
@@ -179,14 +180,15 @@ export function DiseasePrediction() {
   const dispatch = useDispatch()
 
   const [activeTab, setActiveTab] = useState("symptoms")
-  const [selectedSymptoms, setSelectedSymptoms] = useState([])
+  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([])
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [predictionResult, setPredictionResult] = useState<PredictionResultType | null>(null);
+  const [isLoadingAI, setIsLoadingAI] = useState(false)
+  const [predictionResult, setPredictionResult] = useState<PredictionResultType | null>(null)
 
   // Handle symptom selection
-  const handleSymptomChange = (symptomId) => {
+  const handleSymptomChange = (symptomId: string) => {
     setSelectedSymptoms((prev) => {
       if (prev.includes(symptomId)) {
         return prev.filter((id) => id !== symptomId)
@@ -218,8 +220,38 @@ export function DiseasePrediction() {
     })
   }
   
-  // Predict disease based on symptoms
-  // Predict disease based on symptoms
+  // Handle prediction result with AI insights
+  const handlePredictionResult = async (prediction: PredictionResultType) => {
+    setIsAnalyzing(false)
+    setIsLoadingAI(true)
+
+    try {
+      const aiInsights = await getAIInsights(prediction.disease)
+      
+      const enhancedPrediction = {
+        ...prediction,
+        description: aiInsights.description,
+        treatment: aiInsights.treatment,
+        prevention: aiInsights.prevention,
+      }
+
+      setPredictionResult(enhancedPrediction)
+      dispatch(setPrediction(enhancedPrediction))
+    } catch (error) {
+      console.error("Error getting AI insights:", error)
+      setPredictionResult(prediction)
+      dispatch(setPrediction(prediction))
+      toast({
+        title: "AI Insights Error",
+        description: "Could not get AI-generated insights. Showing default information.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoadingAI(false)
+    }
+  }
+
+  // Update predictDiseaseFromSymptoms
 const predictDiseaseFromSymptoms = async () => {
   if (selectedSymptoms.length === 0) {
     toast({
@@ -233,7 +265,8 @@ const predictDiseaseFromSymptoms = async () => {
   setIsAnalyzing(true);
 
   try {
-    const response = await fetch('http://127.0.0.1:8000/api/prompt_prediction/', { // Make sure this URL is correct
+    // First, get the disease prediction from your trained model
+    const response = await fetch('http://127.0.0.1:8000/api/prompt_prediction/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -247,23 +280,39 @@ const predictDiseaseFromSymptoms = async () => {
     }
 
     const result = await response.json();
-
-    // The backend returns a simple JSON with the predicted disease.
-    // We need to find the detailed information from our frontend 'diseasePredictions' map.
     const predictedDiseaseName = result.predicted_disease;
 
-    // Find the full prediction details from the frontend's static data.
-    // In a more advanced application, this detailed data might also come from the backend.
+    // Find the full prediction details from the frontend's static data
     const matchedPrediction = Object.values(diseasePredictions).find(
       (p) => p.disease.toLowerCase() === predictedDiseaseName.toLowerCase()
     ) as PredictionResultType | undefined;
 
-    const finalPrediction = matchedPrediction || {
-        ...diseasePredictions.default,
-        disease: predictedDiseaseName,
-        description: "The AI model identified this disease, but detailed information is not available in the frontend's static data.",
+    let finalPrediction = matchedPrediction || {
+      ...diseasePredictions.default,
+      disease: predictedDiseaseName,
+      description: "The AI model identified this disease, but detailed information is not available in the frontend's static data.",
     };
 
+    // Now get detailed information from Gemini AI
+    try {
+      const aiInsights = await getAIInsights(predictedDiseaseName);
+      
+      // Update the prediction with AI-generated content
+      finalPrediction = {
+        ...finalPrediction,
+        description: aiInsights.description,
+        treatment: aiInsights.treatment,
+        prevention: aiInsights.prevention,
+      };
+    } catch (aiError) {
+      console.error("Gemini AI Error:", aiError);
+      // If AI fails, we'll still use the basic prediction but show a warning
+      toast({
+        title: "AI Enhancement Limited",
+        description: "Basic prediction available, but detailed AI insights could not be generated.",
+        variant: "default"
+      });
+    }
 
     setPredictionResult(finalPrediction);
     dispatch(setPrediction(finalPrediction));
@@ -280,22 +329,17 @@ const predictDiseaseFromSymptoms = async () => {
       variant: "destructive",
     });
 
-    // Set a default error state for the UI
     setPredictionResult({
       ...diseasePredictions.default,
       disease: "Analysis Error",
       description: "Could not get a prediction from the server. Please check your connection and try again.",
     });
-
   } finally {
     setIsAnalyzing(false);
   }
 };
-  const { data: session, status } = useSession();
 
-
-
-// Predict disease from image
+  // Update predictDiseaseFromImage
 const predictDiseaseFromImage = async () => {
   if (!imageFile) {
     toast({
@@ -314,7 +358,7 @@ const predictDiseaseFromImage = async () => {
   try {
     const response = await fetch('http://127.0.0.1:8000/api/predictor/', {
       method: 'POST',
-      body: formData, // No headers needed if there's no authentication
+      body: formData,
     });
 
     if (!response.ok) {
@@ -339,50 +383,26 @@ const predictDiseaseFromImage = async () => {
           disease: predictedDiseaseName,
           description: "The AI model identified this disease, but detailed information is not available in the frontend.",
         };
-        if (predictedDiseaseName === " lumpy") {
-          finalPrediction.description = "Lumpy skin disease (LSD) in cattle is a highly contagious viral disease, causing skin nodules, fever, mucous membranes and internal organs, emaciation, enlarged lymph nodes, oedema of the skin and other symptoms, potentially leading to death. It's caused by the Lumpy skin disease virus (LSDV), a capripoxvirus, and is transmitted through biting insects and ticks.";
-          finalPrediction.treatment ="There's no specific antiviral treatment for Lumpy Skin Disease (LSD) in cattle; treatment focuses on supportive care to manage secondary infections and alleviate symptoms. This includes administering antibiotics to prevent bacterial infections, using anti-inflammatory drugs for pain relief, and potentially providing intravenous fluids and other's.";
-          finalPrediction.prevention ="To prevent lumpy skin disease (LSD) in cattle, the most effective methods are regular vaccination, implementing strict biosecurity measures, and early detection and reporting of suspected cases. Mass vaccination is a cornerstone of prevention. Additionally, restricting animal movement, controlling vectors, and proper disposal of infected animals and contaminated materials are crucial for containing the disease. ";
-        } else if (predictedDiseaseName === " (BRD)") {
-          finalPrediction.description = "Bovine respiratory disease (BRD), also known as shipping fever pneumonia or undifferentiated fever, is a respiratory disease of cattle. BRD has a multifactorial etiology and develops as a result of complex interactions between environmental factors, host factors, and pathogens.";
-          finalPrediction.treatment ="Treatment of Bovine Respiratory Disease (BRD) in cattle typically involves a combination of antibiotics and anti-inflammatory drugs to address the underlying infection and reduce fever and taking Supportive care. Early intervention and rapid treatment initiation are crucial for success. ";
-          finalPrediction.prevention ="To prevent Bovine Respiratory Disease (BRD) in cattle, focus on minimizing stressors, improving biosecurity, and implementing a strong vaccination program. Key strategies include ensuring proper colostrum intake, reducing stress during handling and transportation, and vaccination against common pathogens. ";
-        }
-        else if (predictedDiseaseName === " Bovine") {
-          finalPrediction.description = "Bovine diseases are conditions that affect cattle and can significantly impact their health and productivity. These diseases can be infectious, caused by bacteria, viruses, or parasites, or non-infectious, resulting from nutritional deficiencies or genetic factors. Bovine diseases can cause a range of symptoms, including fever, lethargy, weight loss, reproductive problems, and neurological issues, depending on the specific disease. ";
-          finalPrediction.treatment ="Treatment for Bovine Respiratory Disease (BRD) in cattle typically involves antibiotics tailored to the specific case, such as tulathromycin, ceftiofur, or florfenicol, to target bacterial pathogens. Anti-inflammatory drugs like meloxicam or flunixin meglumine are often used alongside antibiotics to reduce fever, inflammation, and pain, improving recovery rates.";
-          finalPrediction.prevention ="Preventing bovine diseases in cattle involves a combination of measures, including biosecurity practices such as :- quarantine and isolation, movement control, cleaning and disinfection , vaccination, proper nutrition, and hygiene. These measures help reduce the risk of infection, spread of diseases, and improve the overall health of the herd. ";
-        }
-        else if (predictedDiseaseName === " Contagious") {
-          finalPrediction.description = "Contagious diseases in cattle are infections that can spread from one animal to another, often through direct contact, airborne droplets, or shared environment. These diseases can cause significant health problems and economic losses for cattle producers. Examples include Contagious Bovine Pleuropneumonia (CBPP) and Foot-and-Mouth Disease (FMD). ";
-          finalPrediction.treatment ="Treating contagious diseases in cattle involves both immediate care of infected animals and prevention of further spread. This includes providing adequate care to sick animals, such as ensuring access to water and feed, as well as implementing biosecurity measures to prevent the disease from spreading. Medications, often antibiotics, may be necessary, and should be administered as prescribed by a veterinarian. ";
-          finalPrediction.prevention ="Preventing the spread of contagious diseases in cattle requires a multi-faceted approach, including strict biosecurity measures such as isolate new arrivals, restricted access, equipment cleaning and disinfection, movement control, regular sanitation such as :- regular cleaning and disinfection, dry environment, proper disposal of waste, good husbandry practices, and, when necessary, vaccination or treatment. ";
-        }
-        else if (predictedDiseaseName === " Dermatitis") {
-          finalPrediction.description = "Digital dermatitis (DD) in cattle is an infectious skin disease, commonly known as foot rot, that affects the feet, particularly the heels and interdigital spaces. It causes painful lesions that can lead to lameness. DD is caused by a mix of bacteria, including Treponema spp., and is spread through the environment.DD typically presents as raw, red, oval ulcers or erosive lesions with filiform papillae (hair-like projections) on the heel bulbs and interdigital spaces. ";
-          finalPrediction.treatment ="Treatment of dermatitic diseases in cattle primarily focuses on topical therapies, especially for conditions like digital dermatitis. For digital dermatitis, this often involves cleaning and drying the affected area before applying a topical antibiotic spray, like oxytetracycline.";
-          finalPrediction.prevention ="To prevent dermatitis in cattle, focus on maintaining a clean and dry environment, regular foot care, and good hygiene. This includes cleaning passageways and collecting yards, using footbaths with disinfectants, and trimming hooves regularly. ";
-        }
-        else if (predictedDiseaseName === " Ecthym") {
-          finalPrediction.description = "Broadly refers to infections caused by Parapoxviruses, which are a group of viruses related to the Orf virus found in sheep and goats. The most common manifestations in cattle are Bovine Papular Stomatitis (BPS) and Pseudocowpox (PCP). These are generally mild, self-limiting viral skin diseases.";
-          finalPrediction.treatment ="Since Parapoxvirus infections (Ecthym disease, Bovine Papular Stomatitis, Pseudocowpox) in cattle are typically self-limiting, specific antiviral treatment is generally not required. The focus is on supportive care:Manage symptoms: Use non-steroidal anti-inflammatory drugs (NSAIDs) for pain or discomfort, especially with oral or teat lesions, to encourage eating and easier milking.Prevent secondary infections: Apply topical antiseptic ointments or emollient teat dips to lesions to prevent bacterial complications, particularly on teats.Ensure good hygiene: Isolate affected animals, clean and disinfect feeding equipment and milking machines, and use gloves during handling to limit spread.";
-          finalPrediction.prevention ="Implement strict biosecurity, including isolation of new or affected animals, and maintain excellent hygiene for milking equipment and feeding areas. Vaccination is available for related Parapoxviruses and can be considered in endemic areas.";
-        }
-        else if (predictedDiseaseName === " Respiratory") {
-          finalPrediction.description = "Often called as shipping fever, is a common and serious illness in cattle, primarily affecting young calves but also impacting adults. It's a complex issue, caused by a combination of viral and bacterial infections, stress, and environmental factors. The disease manifests with symptoms like coughing, nasal discharge, fever, and lethargy, and can be severe if left untreated. ";
-          finalPrediction.treatment ="Combination of antibiotics, anti-inflammatories, and supportive care. Antibiotics target secondary bacterial infections, while anti-inflammatories reduce inflammation and fever. Supportive care includes electrolyte administration, nutritional support, and in some cases, immunostimulants. ";
-          finalPrediction.prevention ="To prevent respiratory diseases in cattle, focus on minimizing stress, implementing a good vaccination program, and ensuring proper nutrition and biosecurity measures. Early diagnosis and treatment of affected animals are also crucial. ";
-        }
-        else if (predictedDiseaseName === " Unlabeled") {
-          finalPrediction.description = "There is no labeled data";
-          finalPrediction.treatment ="There is no labeled data";
-          finalPrediction.prevention ="There is no labeled data";
-        }
-        else if (predictedDiseaseName === " healthy") {
-          finalPrediction.description = "A healthy cow exhibits signs of good physical and mental well-being, including a smooth, shiny coat, bright eyes, and upright ears. They should move easily and steadily, with all four feet bearing weight.Their nose and muzzle should be clean and moist, with no dribbling saliva, and also dung will be soft and their urine should be clear. If you notice anything wrong with your dairy cow, contact your vet as this could be detrimental to the rest of your herd.";
-          finalPrediction.treatment  ="The treatment of healthy cattle focuses on preventative measures and maintaining optimal conditions for their well-being, rather than directly treating illness. This includes good nutrition, regular hoof trimming, footbaths when needed, and implementing herd health management plans.  ";
-          finalPrediction.prevention ="Involves a multifaceted approach focused on biosecurity, proper management practices, and regular veterinary care. Key strategies include implementing strict biosecurity measures to prevent disease introduction and spread, ensuring adequate nutrition and housing, utilizing vaccinations and parasite control programs, and conducting regular health checks and diagnostic testing. ";
-        }
+      }
+
+      // Get detailed information from Gemini AI
+      try {
+        const aiInsights = await getAIInsights(predictedDiseaseName);
+        
+        // Update the prediction with AI-generated content
+        finalPrediction = {
+          ...finalPrediction,
+          description: aiInsights.description,
+          treatment: aiInsights.treatment,
+          prevention: aiInsights.prevention,
+        };
+      } catch (aiError) {
+        console.error("Gemini AI Error:", aiError);
+        toast({
+          title: "AI Enhancement Limited",
+          description: "Basic prediction available, but detailed AI insights could not be generated.",
+          variant: "default"
+        });
       }
     }
 
@@ -390,13 +410,11 @@ const predictDiseaseFromImage = async () => {
     dispatch(setPrediction(finalPrediction));
 
   } catch (error) {
-    console.error("Prediction API Error:", error);
-
+    console.error("Image Prediction API Error:", error);
     let errorMessage = "An error occurred while analyzing the image.";
     if (error instanceof Error) {
       errorMessage = error.message;
     }
-
     toast({
       title: "Analysis Failed",
       description: errorMessage,
@@ -412,9 +430,6 @@ const predictDiseaseFromImage = async () => {
     setIsAnalyzing(false);
   }
 };
-
-// ... (rest of your existing code)
-
 
   // Reset prediction
   const resetPrediction = () => {
@@ -483,7 +498,17 @@ const predictDiseaseFromImage = async () => {
                       </Button>
                     </div>
                   ) : (
-                    <PredictionResult result={predictionResult} onReset={resetPrediction} />
+                    <PredictionResult
+                      result={predictionResult}
+                      onReset={() => {
+                        setPredictionResult(null)
+                        setSelectedSymptoms([])
+                        setImageFile(null)
+                        setImagePreview(null)
+                        setActiveTab("symptoms")
+                      }}
+                      isLoadingAI={isLoadingAI}
+                    />
                   )}
                 </TabsContent>
 
@@ -532,7 +557,12 @@ const predictDiseaseFromImage = async () => {
                               {!imagePreview && (
                                 <Button
                                   variant="outline"
-                                  onClick={() => document.getElementById("image-upload").click()}
+                                  onClick={() => {
+                                    const uploadInput = document.getElementById("image-upload");
+                                    if (uploadInput) {
+                                      uploadInput.click();
+                                    }
+                                  }}
                                 >
                                   <Upload className="h-4 w-4 mr-2" />
                                   {t("Browse Files")}
@@ -585,7 +615,33 @@ const predictDiseaseFromImage = async () => {
                       </Button>
                     </div>
                   ) : (
-                    <PredictionResult result={predictionResult} onReset={resetPrediction} />
+                    <PredictionResult
+                      result={predictionResult}
+                      onReset={() => {
+                        setPredictionResult(null)
+                        setSelectedSymptoms([])
+                        setImageFile(null)
+                        setImagePreview(null)
+                        setActiveTab("symptoms")
+                      }}
+                      isLoadingAI={isLoadingAI}
+                    />
+                  )}
+                </TabsContent>
+
+                <TabsContent value="result">
+                  {predictionResult && (
+                    <PredictionResult
+                      result={predictionResult}
+                      onReset={() => {
+                        setPredictionResult(null)
+                        setSelectedSymptoms([])
+                        setImageFile(null)
+                        setImagePreview(null)
+                        setActiveTab("symptoms")
+                      }}
+                      isLoadingAI={isLoadingAI}
+                    />
                   )}
                 </TabsContent>
               </Tabs>
@@ -697,65 +753,62 @@ const predictDiseaseFromImage = async () => {
   )
 }
 
-function PredictionResult({ result, onReset }: { result: PredictionResultType, onReset: () => void }) {
+interface PredictionResultProps {
+  result: PredictionResultType;
+  onReset: () => void;
+  isLoadingAI: boolean;
+}
+
+function PredictionResult({ result, onReset, isLoadingAI }: PredictionResultProps) {
   const { t } = useTranslation()
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="space-y-6"
-    >
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-xl font-semibold">{t("Prediction Results")}</h3>
-        <Button variant="outline" onClick={onReset}>
-          {t("New Prediction")}
-        </Button>
+        <div className="space-y-1">
+          <h3 className="text-2xl font-semibold tracking-tight">{result.disease}</h3>
+        </div>
+        <span style={{ color: '#42b0f5' }}>
+        <Button onClick={onReset} variant="outline">
+          {t("Start Over")}
+        </Button></span>
       </div>
 
-      <div className="bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center">
-            <CheckCircle className="h-6 w-6 text-green-500 mr-2" />
-            <h4 className="text-lg font-semibold">{result.disease}</h4>
-          </div>
-          <div className="bg-indigo-100 dark:bg-indigo-800 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-sm font-medium">
-            {result.confidence}% {t("Confidence")}
-          </div>
+      {isLoadingAI ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-3">Getting AI insights...</span>
         </div>
+      ) : (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle><span style={{ color: '#42b0f5' }}>{t("Description")}</span></CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-lg text-muted-foreground whitespace-pre-line">{result.description}</p>
+            </CardContent>
+          </Card>
 
-        <div className="space-y-4">
-          <div>
-            <h5 className="font-medium text-gray-700 dark:text-gray-300 mb-1">{t("Description")}</h5>
-            <p className="text-gray-600 dark:text-gray-400">{result.description}</p>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle><span style={{ color: '#42b0f5' }}>{t("Treatment Recommendations")}</span></CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-lg text-muted-foreground whitespace-pre-line">{result.treatment}</p>
+            </CardContent>
+          </Card>
 
-          <div>
-            <h5 className="font-medium text-gray-700 dark:text-gray-300 mb-1">{t("Recommended Treatment")}</h5>
-            <p className="text-gray-600 dark:text-gray-400">{result.treatment}</p>
-          </div>
-
-          <div>
-            <h5 className="font-medium text-gray-700 dark:text-gray-300 mb-1">{t("Prevention")}</h5>
-            <p className="text-gray-600 dark:text-gray-400">{result.prevention}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 flex items-start">
-        <AlertCircle className="h-5 w-5 text-yellow-500 mr-3 mt-0.5 flex-shrink-0" />
-        <div>
-          <h4 className="font-medium text-yellow-800 dark:text-yellow-300">{t("Next Steps")}</h4>
-          <ul className="text-sm text-yellow-700 dark:text-yellow-400 mt-1 list-disc list-inside space-y-1">
-            <li>{t("Consult with a veterinarian to confirm the diagnosis")}</li>
-            <li>{t("Isolate affected animals if the disease is contagious")}</li>
-            <li>{t("Follow the recommended treatment plan under veterinary supervision")}</li>
-            <li>{t("Implement prevention measures to protect other animals")}</li>
-          </ul>
-        </div>
-      </div>
-    </motion.div>
+          <Card>
+            <CardHeader>
+              <CardTitle><span style={{ color: '#42b0f5' }}>{t("Prevention Measures")}</span></CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-lg text-muted-foreground whitespace-pre-line">{result.prevention}</p>
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </div>
   )
 }
-

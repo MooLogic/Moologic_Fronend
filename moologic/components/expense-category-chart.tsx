@@ -1,58 +1,120 @@
 "use client"
 
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip, Legend } from "recharts"
-import { useTheme } from "@/components/providers/theme-provider"
+import { useSession } from "next-auth/react"
+import { Card } from "@/components/ui/card"
 import { useTranslation } from "@/components/providers/language-provider"
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
 
-// Sample data for expense categories
-const expenseCategoryData = [
-  { name: "Feed", value: 35000 },
-  { name: "Labor", value: 20000 },
-  { name: "Veterinary", value: 8000 },
-  { name: "Equipment", value: 7000 },
-  { name: "Utilities", value: 6000 },
-  { name: "Maintenance", value: 5000 },
-  { name: "Other", value: 4000 },
-]
+// Create API slice for expense breakdown
+export const expenseBreakdownApi = createApi({
+  reducerPath: 'expenseBreakdownApi',
+  baseQuery: fetchBaseQuery({
+    baseUrl: process.env.NEXT_PUBLIC_BASE_URL || 'http://127.0.0.1:8000/',
+  }),
+  endpoints: (builder) => ({
+    getExpenseBreakdown: builder.query<{
+      title: string;
+      breakdown: { [key: string]: number };
+      total_expense: number;
+      calculated_on: string;
+    }, { accessToken: string; farmId: number }>({
+      query: ({ accessToken, farmId }) => ({
+        url: `financial/expense/breakdown/${farmId}/`,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }),
+    }),
+  }),
+})
 
-const COLORS = ["#6366f1", "#8b5cf6", "#d946ef", "#ec4899", "#f43f5e", "#f97316", "#eab308"]
+export const { useGetExpenseBreakdownQuery } = expenseBreakdownApi
+
+// Define chart colors - using different colors from income chart for distinction
+const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#D4A5A5']
 
 export function ExpenseCategoryChart() {
-  const { theme } = useTheme()
   const { t } = useTranslation()
+  const { data: session } = useSession()
+  const accessToken = session?.user?.accessToken || ""
+  const farmId = 1 // Replace with actual farm ID from your app state
 
-  const textColor = theme === "dark" ? "#e5e7eb" : "#374151"
+  const { data: breakdownData, isLoading } = useGetExpenseBreakdownQuery({
+    accessToken,
+    farmId,
+  })
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[350px]">
+        <p>Loading...</p>
+      </div>
+    )
+  }
+
+  if (!breakdownData || !breakdownData.breakdown) {
+    return (
+      <div className="flex items-center justify-center h-[350px]">
+        <p>No data available</p>
+      </div>
+    )
+  }
+
+  // Transform the breakdown data for the pie chart
+  const chartData = Object.entries(breakdownData.breakdown).map(([category, percentage]) => ({
+    name: category,
+    value: percentage,
+  }))
+
+  // Custom tooltip formatter
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-2 border rounded shadow">
+          <p className="font-medium">{payload[0].name}</p>
+          <p className="text-sm">{`${payload[0].value.toFixed(2)}%`}</p>
+          <p className="text-sm text-gray-600">
+            {`${t("Amount")}: ${new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'ETB',
+            }).format((breakdownData.total_expense * payload[0].value) / 100)}`}
+          </p>
+        </div>
+      )
+    }
+    return null
+  }
 
   return (
-    <ResponsiveContainer width="100%" height="100%">
-      <PieChart margin={{ top: 20, right: 30, left: 20, bottom: 10 }}>
-        <Pie
-          data={expenseCategoryData}
-          cx="50%"
-          cy="50%"
-          labelLine={false}
-          outerRadius={120}
-          innerRadius={60}
-          fill="#8884d8"
-          dataKey="value"
-          label={({ name, percent }) => `${t(name)}: ${(percent * 100).toFixed(0)}%`}
-        >
-          {expenseCategoryData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-          ))}
-        </Pie>
-        <Tooltip
-          contentStyle={{
-            backgroundColor: theme === "dark" ? "#1f2937" : "#ffffff",
-            borderColor: theme === "dark" ? "#374151" : "#e5e7eb",
-            color: textColor,
-          }}
-          formatter={(value) => [`$${value.toLocaleString()}`, undefined]}
-          labelFormatter={(value) => t(value)}
-        />
-        <Legend formatter={(value) => t(value)} layout="vertical" verticalAlign="middle" align="right" />
-      </PieChart>
-    </ResponsiveContainer>
+    <div className="w-full h-full">
+      <div className="text-sm text-gray-500 mb-4">
+        {t("Total Expenses")}: {new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'ETB',
+        }).format(breakdownData.total_expense)}
+      </div>
+      <ResponsiveContainer width="100%" height={300}>
+        <PieChart>
+          <Pie
+            data={chartData}
+            cx="50%"
+            cy="50%"
+            labelLine={false}
+            label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+            outerRadius={100}
+            fill="#8884d8"
+            dataKey="value"
+          >
+            {chartData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            ))}
+          </Pie>
+          <Tooltip content={<CustomTooltip />} />
+          <Legend />
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
   )
 }
 

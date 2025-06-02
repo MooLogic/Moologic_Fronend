@@ -2,7 +2,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { FinanceOverview } from "@/components/finance-overview"
 import { IncomeExpenseRecords } from "@/components/income-expense-records"
-import { BudgetManagement } from "@/components/budget-management"
 import { useTranslation } from "@/components/providers/language-provider"
 
 export function FinanceDashboard() {
@@ -17,19 +16,15 @@ export function FinanceDashboard() {
 
       <div className="p-8">
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-[600px] grid-cols-3 mb-8">
+          <TabsList className="grid w-[400px] grid-cols-2 mb-8">
             <TabsTrigger value="overview">{t("Overview")}</TabsTrigger>
             <TabsTrigger value="records">{t("Income & Expenses")}</TabsTrigger>
-            <TabsTrigger value="budget">{t("Budget Management")}</TabsTrigger>
           </TabsList>
           <TabsContent value="overview">
             <FinanceOverview />
           </TabsContent>
           <TabsContent value="records">
             <IncomeExpenseRecords />
-          </TabsContent>
-          <TabsContent value="budget">
-            <BudgetManagement />
           </TabsContent>
         </Tabs>
       </div>
