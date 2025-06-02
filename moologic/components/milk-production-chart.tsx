@@ -41,7 +41,7 @@ export function MilkProductionChart({ data }: MilkProductionChartProps) {
     <Card>
       <CardHeader>
         <div className="flex flex-col space-y-2">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
             <CardTitle>Production Overview</CardTitle>
             <TooltipProvider>
               <UITooltip>
@@ -70,14 +70,14 @@ export function MilkProductionChart({ data }: MilkProductionChartProps) {
                   <span>Decline Rate:</span>
                   <span className="font-bold">Standard</span>
                 </Badge>
-              </div>
-            </div>
+        </div>
+        </div>
           </CardDescription>
         </div>
       </CardHeader>
       <CardContent>
         <div className="w-full aspect-[2/1]">
-          <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={data}
               margin={{
@@ -88,23 +88,23 @@ export function MilkProductionChart({ data }: MilkProductionChartProps) {
               }}
             >
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="date"
+          <XAxis
+            dataKey="date"
                 tick={{ fontSize: 12 }}
                 interval="preserveStartEnd"
-              />
-              <YAxis
+          />
+          <YAxis
                 yAxisId="left"
                 tick={{ fontSize: 12 }}
                 label={{ value: 'Liters', angle: -90, position: 'insideLeft' }}
-              />
-              <YAxis
+          />
+          <YAxis
                 yAxisId="right"
-                orientation="right"
+            orientation="right"
                 tick={{ fontSize: 12 }}
                 label={{ value: 'Difference %', angle: 90, position: 'insideRight' }}
-              />
-              <Tooltip
+          />
+          <Tooltip
                 contentStyle={{
                   backgroundColor: 'rgba(255, 255, 255, 0.8)',
                   border: '1px solid #ccc',
@@ -118,37 +118,37 @@ export function MilkProductionChart({ data }: MilkProductionChartProps) {
                 }}
               />
               <Legend />
-              <Line
+          <Line
                 yAxisId="left"
-                type="monotone"
+            type="monotone"
                 dataKey="actual"
                 stroke="#2563eb"
                 name="Actual Production"
-                strokeWidth={2}
-                dot={false}
-              />
-              <Line
+            strokeWidth={2}
+            dot={false}
+          />
+          <Line
                 yAxisId="left"
-                type="monotone"
+            type="monotone"
                 dataKey="estimated"
                 stroke="#16a34a"
                 name="Expected Production"
-                strokeWidth={2}
-                dot={false}
+            strokeWidth={2}
+            dot={false}
                 strokeDasharray="5 5"
-              />
-              <Line
+          />
+          <Line
                 yAxisId="right"
-                type="monotone"
-                dataKey="difference"
+            type="monotone"
+            dataKey="difference"
                 stroke="#dc2626"
                 name="Difference %"
                 strokeWidth={1}
-                dot={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+            dot={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
       </CardContent>
     </Card>
   )

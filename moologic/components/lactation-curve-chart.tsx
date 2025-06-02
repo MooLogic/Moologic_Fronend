@@ -1,97 +1,114 @@
 "use client"
 
+import { useTheme } from "@/components/providers/theme-provider"
+import { Card } from "@/components/ui/card"
+import { useTranslation } from "@/components/providers/language-provider"
 import {
-  Line,
   LineChart,
-  ResponsiveContainer,
-  Tooltip,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
+  Tooltip,
   Legend,
-  ReferenceLine,
+  ResponsiveContainer,
 } from "recharts"
-import { useTheme } from "@/components/providers/theme-provider"
-import { useTranslation } from "@/components/providers/language-provider"
 
-// Sample data for lactation curve
-const lactationData = [
-  { day: 0, actual: 15, expected: 15 },
-  { day: 30, actual: 25, expected: 28 },
-  { day: 60, actual: 30, expected: 32 },
-  { day: 90, actual: 32, expected: 30 },
-  { day: 120, actual: 28, expected: 28 },
-  { day: 150, actual: 25, expected: 26 },
-  { day: 180, actual: 22, expected: 24 },
-  { day: 210, actual: 20, expected: 22 },
-  { day: 240, actual: 18, expected: 20 },
-  { day: 270, actual: 15, expected: 18 },
-  { day: 300, actual: 12, expected: 15 },
-  { day: 330, actual: 8, expected: 12 },
-  { day: 360, actual: 5, expected: 8 },
-]
+interface LactationCurveData {
+  day: number
+  expected: number
+  actual: number | null
+}
 
-export function LactationCurveChart() {
+interface LactationCurveChartProps {
+  data: LactationCurveData[]
+}
+
+export function LactationCurveChart({ data }: LactationCurveChartProps) {
   const { theme } = useTheme()
   const { t } = useTranslation()
 
-  const textColor = theme === "dark" ? "#e5e7eb" : "#374151"
-  const gridColor = theme === "dark" ? "#374151" : "#e5e7eb"
+  // Calculate statistics
+  const actualData = data.filter(d => d.actual !== null)
+  const peakDay = actualData.reduce((max, curr) => 
+    (curr.actual || 0) > (actualData[max].actual || 0) ? curr.day : max
+  , 0)
+  
+  const peakProduction = actualData[peakDay]?.actual || 0
+  const persistency = actualData.length > 0 
+    ? ((actualData[actualData.length - 1]?.actual || 0) / peakProduction) * 100 
+    : 0
+
+  // Custom tooltip
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <Card className="p-3 bg-white dark:bg-gray-800 shadow-lg">
+          <p className="text-sm font-medium">{t("Day")}: {label}</p>
+          {payload.map((entry: any) => (
+            <p key={entry.name} className="text-sm" style={{ color: entry.color }}>
+              {entry.name === "expected" ? t("Expected") : t("Actual")}: {entry.value?.toFixed(1)} L
+            </p>
+          ))}
+        </Card>
+      )
+    }
+    return null
+  }
 
   return (
-    <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={lactationData} margin={{ top: 20, right: 30, left: 20, bottom: 10 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-        <XAxis
-          dataKey="day"
-          label={{
-            value: t("Days in Milk"),
-            position: "insideBottomRight",
-            offset: -10,
-            fill: textColor,
-          }}
-          tick={{ fill: textColor }}
-        />
-        <YAxis
-          label={{
-            value: t("Milk Yield (L)"),
-            angle: -90,
-            position: "insideLeft",
-            fill: textColor,
-          }}
-          tick={{ fill: textColor }}
-        />
-        <Tooltip
-          contentStyle={{
-            backgroundColor: theme === "dark" ? "#1f2937" : "#ffffff",
-            borderColor: theme === "dark" ? "#374151" : "#e5e7eb",
-            color: textColor,
-          }}
-          formatter={(value) => [`${value} L`, undefined]}
-          labelFormatter={(value) => `${t("Day")} ${value}`}
-        />
-        <Legend formatter={(value) => t(value)} />
-        <ReferenceLine x={90} stroke="#ff7f50" strokeDasharray="3 3" label={{ value: t("Peak"), fill: textColor }} />
-        <Line
-          type="monotone"
-          dataKey="actual"
-          name={t("Actual")}
-          stroke="#6366f1"
-          strokeWidth={2}
-          dot={{ r: 4 }}
-          activeDot={{ r: 6 }}
-        />
-        <Line
-          type="monotone"
-          dataKey="expected"
-          name={t("Expected")}
-          stroke="#22c55e"
-          strokeWidth={2}
-          dot={{ r: 4 }}
-          strokeDasharray="5 5"
-        />
-      </LineChart>
-    </ResponsiveContainer>
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="p-4">
+          <p className="text-sm text-gray-500">{t("Peak Day")}</p>
+          <p className="text-2xl font-bold">{peakDay}</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-sm text-gray-500">{t("Peak Production")}</p>
+          <p className="text-2xl font-bold">{peakProduction.toFixed(1)} L</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-sm text-gray-500">{t("Persistency")}</p>
+          <p className="text-2xl font-bold">{persistency.toFixed(1)}%</p>
+        </Card>
+      </div>
+      
+      <ResponsiveContainer width="100%" height={350}>
+        <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis
+            dataKey="day"
+            label={{ value: t("Days in Milk"), position: "insideBottom", offset: -5 }}
+          />
+          <YAxis
+            label={{
+              value: t("Daily Milk Yield (L)"),
+              angle: -90,
+              position: "insideLeft",
+              offset: 10,
+            }}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend />
+          <Line
+            type="monotone"
+            dataKey="expected"
+            stroke="#8884d8"
+            name={t("Expected (Woods Model)")}
+            strokeWidth={2}
+            dot={false}
+          />
+          <Line
+            type="monotone"
+            dataKey="actual"
+            stroke="#82ca9d"
+            name={t("Actual Production")}
+            strokeWidth={2}
+            connectNulls
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
   )
 }
 

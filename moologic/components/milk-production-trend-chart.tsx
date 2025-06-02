@@ -1,60 +1,160 @@
 "use client"
 
-import { Bar, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, Legend, Line, ComposedChart } from "recharts"
 import { useTheme } from "@/components/providers/theme-provider"
+import { Card } from "@/components/ui/card"
 import { useTranslation } from "@/components/providers/language-provider"
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  Area,
+  ComposedChart,
+} from "recharts"
+import { format, subDays } from "date-fns"
 
-// Sample data for production trend
-const trendData = [
-  { month: "Jan", morning: 12, evening: 10, average: 11 },
-  { month: "Feb", morning: 13, evening: 11, average: 12 },
-  { month: "Mar", morning: 15, evening: 12, average: 13.5 },
-  { month: "Apr", morning: 14, evening: 11, average: 12.5 },
-  { month: "May", morning: 13, evening: 10, average: 11.5 },
-  { month: "Jun", morning: 12, evening: 9, average: 10.5 },
-  { month: "Jul", morning: 11, evening: 9, average: 10 },
-  { month: "Aug", morning: 12, evening: 10, average: 11 },
-  { month: "Sep", morning: 13, evening: 11, average: 12 },
-  { month: "Oct", morning: 14, evening: 12, average: 13 },
-  { month: "Nov", morning: 15, evening: 13, average: 14 },
-  { month: "Dec", morning: 14, evening: 12, average: 13 },
-]
+interface MilkRecord {
+  id: number
+  quantity: number
+  date: string
+  shift: "morning" | "evening"
+}
 
-export function MilkProductionTrendChart() {
+interface MilkProductionTrendChartProps {
+  data: MilkRecord[]
+}
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  const { t } = useTranslation()
+  if (active && payload && payload.length) {
+    return (
+      <Card className="p-3 bg-white shadow-lg">
+        <p className="text-sm font-medium mb-2">
+          {format(new Date(label), "MMM d, yyyy")}
+        </p>
+        {payload.map((entry: any) => (
+          <p key={entry.name} className="text-sm" style={{ color: entry.color }}>
+            {t(entry.name)}: {Number(entry.value || 0).toFixed(1)} L
+          </p>
+        ))}
+      </Card>
+    )
+  }
+  return null
+}
+
+export function MilkProductionTrendChart({ data }: MilkProductionTrendChartProps) {
   const { theme } = useTheme()
   const { t } = useTranslation()
 
-  const textColor = theme === "dark" ? "#e5e7eb" : "#374151"
-  const gridColor = theme === "dark" ? "#374151" : "#e5e7eb"
+  // Process data to group by date and shift
+  const processedData = data.reduce((acc: any[], record) => {
+    const date = record.date.split('T')[0]
+    const existingRecord = acc.find(r => r.date === date)
+
+    if (existingRecord) {
+      if (record.shift === 'morning') {
+        existingRecord.morning = Number(record.quantity) || 0
+      } else {
+        existingRecord.evening = Number(record.quantity) || 0
+      }
+      existingRecord.total = Number(existingRecord.morning + existingRecord.evening)
+    } else {
+      acc.push({
+        date,
+        morning: record.shift === 'morning' ? Number(record.quantity) || 0 : 0,
+        evening: record.shift === 'evening' ? Number(record.quantity) || 0 : 0,
+        total: Number(record.quantity) || 0
+      })
+    }
+
+    return acc
+  }, [])
+
+  // Sort by date
+  processedData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+  // Calculate 7-day moving average
+  processedData.forEach((day, index) => {
+    const last7Days = processedData.slice(Math.max(0, index - 6), index + 1)
+    day.average = last7Days.reduce((sum, d) => sum + d.total, 0) / last7Days.length
+  })
+
+  // Calculate statistics
+  const currentAverage = processedData[processedData.length - 1]?.average || 0
+  const previousAverage = processedData[processedData.length - 8]?.average || 0
+  const trend = previousAverage ? ((currentAverage - previousAverage) / previousAverage) * 100 : 0
 
   return (
-    <ResponsiveContainer width="100%" height="100%">
-      <ComposedChart data={trendData} margin={{ top: 20, right: 30, left: 20, bottom: 10 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-        <XAxis dataKey="month" tick={{ fill: textColor }} />
-        <YAxis
-          label={{
-            value: t("Milk Yield (L)"),
-            angle: -90,
-            position: "insideLeft",
-            fill: textColor,
-          }}
-          tick={{ fill: textColor }}
-        />
-        <Tooltip
-          contentStyle={{
-            backgroundColor: theme === "dark" ? "#1f2937" : "#ffffff",
-            borderColor: theme === "dark" ? "#374151" : "#e5e7eb",
-            color: textColor,
-          }}
-          formatter={(value) => [`${value} L`, undefined]}
-        />
-        <Legend formatter={(value) => t(value)} />
-        <Bar dataKey="morning" name={t("Morning")} stackId="a" fill="#6366f1" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="evening" name={t("Evening")} stackId="a" fill="#a5b4fc" radius={[4, 4, 0, 0]} />
-        <Line type="monotone" dataKey="average" name={t("Average")} stroke="#22c55e" strokeWidth={2} dot={{ r: 4 }} />
-      </ComposedChart>
-    </ResponsiveContainer>
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="p-4">
+          <p className="text-sm text-gray-500">{t("Current Average")}</p>
+          <p className="text-2xl font-bold">{currentAverage.toFixed(1)} L</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-sm text-gray-500">{t("Previous Average")}</p>
+          <p className="text-2xl font-bold">{previousAverage.toFixed(1)} L</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-sm text-gray-500">{t("7-Day Trend")}</p>
+          <p className={`text-2xl font-bold ${trend > 0 ? "text-green-500" : "text-red-500"}`}>
+            {trend > 0 ? "+" : ""}{trend.toFixed(1)}%
+          </p>
+        </Card>
+      </div>
+
+      <ResponsiveContainer width="100%" height={350}>
+        <ComposedChart data={processedData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis
+            dataKey="date"
+            tickFormatter={(value) => format(new Date(value), "MMM d")}
+            label={{ value: t("Date"), position: "insideBottom", offset: -5 }}
+          />
+          <YAxis
+            label={{
+              value: t("Daily Milk Yield (L)"),
+              angle: -90,
+              position: "insideLeft",
+              offset: 10,
+            }}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend />
+          <Area
+            type="monotone"
+            dataKey="morning"
+            stackId="1"
+            stroke="#8884d8"
+            fill="#8884d8"
+            name={t("Morning")}
+            fillOpacity={0.3}
+          />
+          <Area
+            type="monotone"
+            dataKey="evening"
+            stackId="1"
+            stroke="#82ca9d"
+            fill="#82ca9d"
+            name={t("Evening")}
+            fillOpacity={0.3}
+          />
+          <Line
+            type="monotone"
+            dataKey="average"
+            stroke="#ff7300"
+            name={t("7-Day Average")}
+            strokeWidth={2}
+            dot={false}
+          />
+        </ComposedChart>
+      </ResponsiveContainer>
+    </div>
   )
 }
 

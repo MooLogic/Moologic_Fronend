@@ -5,6 +5,7 @@ import { cattleApi } from "./service/cattleService"
 import { userApi } from "./service/userService"
 import { inseminationApi } from "./service/inseminationService"
 import { milkApi } from "./service/milkService"
+import { alertApi } from "./service/alertService"
 
 export const store = configureStore({
   reducer: {
@@ -13,6 +14,7 @@ export const store = configureStore({
     [userApi.reducerPath]: userApi.reducer,
     [inseminationApi.reducerPath]: inseminationApi.reducer,
     [milkApi.reducerPath]: milkApi.reducer,
+    [alertApi.reducerPath]: alertApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat([
@@ -21,6 +23,7 @@ export const store = configureStore({
       userApi.middleware,
       inseminationApi.middleware,
       milkApi.middleware,
+      alertApi.middleware,
     ]),
 })
 
