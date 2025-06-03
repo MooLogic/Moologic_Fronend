@@ -76,38 +76,38 @@ export function LactationCurveChart({ data }: LactationCurveChartProps) {
       <ResponsiveContainer width="100%" height={350}>
         <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis
-            dataKey="day"
+        <XAxis
+          dataKey="day"
             label={{ value: t("Days in Milk"), position: "insideBottom", offset: -5 }}
-          />
-          <YAxis
-            label={{
+        />
+        <YAxis
+          label={{
               value: t("Daily Milk Yield (L)"),
-              angle: -90,
-              position: "insideLeft",
+            angle: -90,
+            position: "insideLeft",
               offset: 10,
             }}
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend />
-          <Line
-            type="monotone"
+        <Line
+          type="monotone"
             dataKey="expected"
             stroke="#8884d8"
             name={t("Expected (Woods Model)")}
-            strokeWidth={2}
+          strokeWidth={2}
             dot={false}
-          />
-          <Line
-            type="monotone"
+        />
+        <Line
+          type="monotone"
             dataKey="actual"
             stroke="#82ca9d"
             name={t("Actual Production")}
-            strokeWidth={2}
+          strokeWidth={2}
             connectNulls
-          />
-        </LineChart>
-      </ResponsiveContainer>
+        />
+      </LineChart>
+    </ResponsiveContainer>
     </div>
   )
 }

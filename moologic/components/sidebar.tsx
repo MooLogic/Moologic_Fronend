@@ -104,12 +104,6 @@ export function Sidebar({ className }: SidebarProps) {
       active: pathname === "/finance",
     },
     {
-      label: t("Statistics"),
-      icon: BarChart3,
-      href: "/statistics",
-      active: pathname === "/statistics",
-    },
-    {
       label: t("Notifications"),
       icon: Bell,
       href: "/notifications",
@@ -164,7 +158,7 @@ export function Sidebar({ className }: SidebarProps) {
         </SheetTrigger>
         <SheetContent side="left" className="p-0 flex flex-col">
           <div className="p-6 border-b">
-            <h2 className="text-2xl font-bold">MooLogic</h2>
+            <h2 className="text-2xl font-bold">LoonKoo</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">{t("Dairy Farm Management")}</p>
           </div>
           <ScrollArea className="flex-1">
@@ -192,7 +186,7 @@ export function Sidebar({ className }: SidebarProps) {
       </Sheet>
       <div className={cn("hidden md:flex flex-col h-screen border-r", className)}>
         <div className="p-6 border-b">
-          <h2 className="text-2xl font-bold">MooLogic</h2>
+          <h2 className="text-2xl font-bold">LoonKoo</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">{t("Dairy Farm Management")}</p>
         </div>
         <ScrollArea className="flex-1">

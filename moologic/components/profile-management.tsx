@@ -365,28 +365,28 @@ export default function ProfileManagement() {
 
           <TabsContent value="profile">
             <Card>
-              <CardHeader className="relative">
-                <div className="flex flex-col items-center">
-                  <div className="relative group">
-                    <Avatar className="w-24 h-24 border-4 border-background">
-                      <AvatarImage src={profileImage} alt="Profile" />
-                      <AvatarFallback className="text-2xl">
+            <CardHeader className="relative">
+              <div className="flex flex-col items-center">
+                <div className="relative group">
+                  <Avatar className="w-24 h-24 border-4 border-background">
+                    <AvatarImage src={profileImage} alt="Profile" />
+                    <AvatarFallback className="text-2xl">
                         {session.user.name?.substring(0, 2).toUpperCase() || "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                    {isEditing && (
-                      <label className="absolute inset-0 bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
-                        <Camera className="text-white h-6 w-6" />
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleImageUpload}
+                    </AvatarFallback>
+                  </Avatar>
+                  {isEditing && (
+                    <label className="absolute inset-0 bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
+                      <Camera className="text-white h-6 w-6" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleImageUpload}
                           disabled={isLoading}
-                        />
-                      </label>
-                    )}
-                  </div>
+                      />
+                    </label>
+                  )}
+                </div>
                   <div className="mt-4 text-center">
                     <h2 className="text-xl font-semibold">{currentUser?.full_name || "User"}</h2>
                     <p className="text-sm text-muted-foreground">{currentUser?.email}</p>
@@ -395,8 +395,8 @@ export default function ProfileManagement() {
                         {emailVerificationData?.is_verified ? "Verified" : "Unverified"}
                       </Badge>
                       <Badge variant="outline">{session.user.role}</Badge>
-                    </div>
-                  </div>
+              </div>
+                </div>
                 </div>
                 <Button
                   variant="ghost"
@@ -405,132 +405,132 @@ export default function ProfileManagement() {
                   onClick={() => setIsEditing(!isEditing)}
                 >
                   {isEditing ? <X className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
-                </Button>
+              </Button>
               </CardHeader>
 
-              <Form {...profileForm}>
+            <Form {...profileForm}>
                 <form onSubmit={profileForm.handleSubmit(onProfileSubmit)}>
                   <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <FormField
-                        control={profileForm.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
+                            <FormField
+                              control={profileForm.control}
+                              name="name"
+                              render={({ field }) => (
+                                <FormItem>
                             <FormLabel>Name</FormLabel>
-                            <FormControl>
+                                  <FormControl>
                               <Input
                                 {...field}
                                 disabled={!isEditing || isLoading}
                                 placeholder="Enter your name"
                               />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
 
-                      <FormField
-                        control={profileForm.control}
-                        name="username"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Username</FormLabel>
-                            <FormControl>
+                            <FormField
+                              control={profileForm.control}
+                              name="username"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Username</FormLabel>
+                                  <FormControl>
                               <Input
                                 {...field}
                                 disabled={!isEditing || isLoading}
                                 placeholder="Enter your username"
                               />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
 
-                      <FormField
-                        control={profileForm.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
+                            <FormField
+                              control={profileForm.control}
+                              name="email"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Email</FormLabel>
+                                  <FormControl>
                               <Input
                                 {...field}
                                 type="email"
                                 disabled={!isEditing || isLoading}
                                 placeholder="Enter your email"
                               />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
 
-                      <FormField
-                        control={profileForm.control}
-                        name="phone_number"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone Number</FormLabel>
-                            <FormControl>
+                            <FormField
+                              control={profileForm.control}
+                              name="phone_number"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Phone Number</FormLabel>
+                                  <FormControl>
                               <Input
                                 {...field}
                                 disabled={!isEditing || isLoading}
                                 placeholder="Enter your phone number"
                               />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
 
-                      <FormField
-                        control={profileForm.control}
+                            <FormField
+                              control={profileForm.control}
                         name="language"
-                        render={({ field }) => (
-                          <FormItem>
+                              render={({ field }) => (
+                                <FormItem>
                             <FormLabel>Language</FormLabel>
                             <Select
                               disabled={!isEditing || isLoading}
                               onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
-                              <FormControl>
+                                  <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select a language" />
                                 </SelectTrigger>
-                              </FormControl>
+                                  </FormControl>
                               <SelectContent>
                                 <SelectItem value="en">English</SelectItem>
                                 <SelectItem value="am">Amharic</SelectItem>
                                 <SelectItem value="or">Oromiffa</SelectItem>
                               </SelectContent>
                             </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
 
-                    <FormField
-                      control={profileForm.control}
-                      name="bio"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Bio</FormLabel>
-                          <FormControl>
-                            <textarea
-                              {...field}
+                          <FormField
+                            control={profileForm.control}
+                            name="bio"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Bio</FormLabel>
+                                <FormControl>
+                                  <textarea
+                                    {...field}
                               className="min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                               disabled={!isEditing || isLoading}
                               placeholder="Tell us about yourself"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
 
                     <div className="space-y-4">
                       <h3 className="text-lg font-medium">Notification Preferences</h3>
@@ -586,10 +586,10 @@ export default function ProfileManagement() {
                           )}
                         />
                       </div>
-                    </div>
-                  </CardContent>
+                        </div>
+                      </CardContent>
 
-                  {isEditing && (
+                        {isEditing && (
                     <CardFooter className="flex justify-end space-x-4">
                       <Button
                         type="button"
@@ -603,26 +603,26 @@ export default function ProfileManagement() {
                         {isLoading ? (
                           <>
                             <span className="loading loading-spinner loading-sm mr-2"></span>
-                            Saving...
-                          </>
-                        ) : (
-                          <>
+                                Saving...
+                              </>
+                            ) : (
+                              <>
                             <Save className="w-4 h-4 mr-2" />
                             Save Changes
-                          </>
-                        )}
-                      </Button>
+                              </>
+                            )}
+                          </Button>
                     </CardFooter>
-                  )}
+                        )}
                 </form>
               </Form>
-            </Card>
-          </TabsContent>
+                    </Card>
+                  </TabsContent>
 
-          <TabsContent value="security">
+                  <TabsContent value="security">
             <div className="grid gap-6">
-              <Card>
-                <CardHeader>
+                    <Card>
+                      <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Key className="w-5 h-5" />
                     Change Password
@@ -630,86 +630,86 @@ export default function ProfileManagement() {
                   <CardDescription>
                     Update your password to keep your account secure
                   </CardDescription>
-                </CardHeader>
+                      </CardHeader>
 
-                <Form {...passwordForm}>
+                        <Form {...passwordForm}>
                   <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}>
                     <CardContent className="space-y-4">
-                      <FormField
-                        control={passwordForm.control}
-                        name="old_password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Current Password</FormLabel>
-                            <FormControl>
+                            <FormField
+                              control={passwordForm.control}
+                              name="old_password"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Current Password</FormLabel>
+                                  <FormControl>
                               <Input
                                 {...field}
                                 type="password"
                                 disabled={isLoading}
                                 placeholder="Enter your current password"
                               />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
 
-                      <FormField
-                        control={passwordForm.control}
-                        name="new_password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>New Password</FormLabel>
-                            <FormControl>
+                            <FormField
+                              control={passwordForm.control}
+                              name="new_password"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>New Password</FormLabel>
+                                  <FormControl>
                               <Input
                                 {...field}
                                 type="password"
                                 disabled={isLoading}
                                 placeholder="Enter your new password"
                               />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
 
-                      <FormField
-                        control={passwordForm.control}
-                        name="confirm_password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Confirm New Password</FormLabel>
-                            <FormControl>
+                            <FormField
+                              control={passwordForm.control}
+                              name="confirm_password"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Confirm New Password</FormLabel>
+                                  <FormControl>
                               <Input
                                 {...field}
                                 type="password"
                                 disabled={isLoading}
                                 placeholder="Confirm your new password"
                               />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
                     </CardContent>
 
                     <CardFooter>
                       <Button type="submit" disabled={isLoading}>
                         {isLoading ? (
-                          <>
+                                <>
                             <span className="loading loading-spinner loading-sm mr-2"></span>
                             Updating...
-                          </>
-                        ) : (
-                          <>
+                                </>
+                              ) : (
+                                <>
                             <Lock className="w-4 h-4 mr-2" />
                             Update Password
-                          </>
-                        )}
-                      </Button>
+                                </>
+                              )}
+                            </Button>
                     </CardFooter>
-                  </form>
-                </Form>
+                          </form>
+                        </Form>
               </Card>
 
               <Card>
@@ -724,7 +724,7 @@ export default function ProfileManagement() {
                 </CardHeader>
 
                 <CardContent>
-                  <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       {emailVerificationData?.is_verified ? (
                         <Shield className="w-5 h-5 text-green-500" />
@@ -736,7 +736,7 @@ export default function ProfileManagement() {
                           ? "Your email is verified"
                           : "Your email is not verified"}
                       </span>
-                    </div>
+                            </div>
                     {!emailVerificationData?.is_verified && (
                       <Button
                         variant="outline"
@@ -746,12 +746,12 @@ export default function ProfileManagement() {
                         {isLoading ? "Sending..." : "Send verification email"}
                       </Button>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
+                        </div>
+                      </CardContent>
+                    </Card>
 
-              <Card>
-                <CardHeader>
+                    <Card>
+                      <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Key className="w-5 h-5" />
                     Reset Password
@@ -759,29 +759,29 @@ export default function ProfileManagement() {
                   <CardDescription>
                     Request a password reset link via email
                   </CardDescription>
-                </CardHeader>
+                      </CardHeader>
 
                 <Form {...resetPasswordForm}>
                   <form onSubmit={resetPasswordForm.handleSubmit(onResetPasswordSubmit)}>
-                    <CardContent className="space-y-4">
-                      <FormField
+                      <CardContent className="space-y-4">
+                          <FormField
                         control={resetPasswordForm.control}
                         name="email"
-                        render={({ field }) => (
+                            render={({ field }) => (
                           <FormItem>
                             <FormLabel>Email</FormLabel>
-                            <FormControl>
+                                <FormControl>
                               <Input
                                 {...field}
                                 type="email"
                                 disabled={isLoading}
                                 placeholder="Enter your email address"
-                              />
-                            </FormControl>
+                                  />
+                                </FormControl>
                             <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                              </FormItem>
+                            )}
+                          />
                     </CardContent>
 
                     <CardFooter>
@@ -802,7 +802,7 @@ export default function ProfileManagement() {
                   </form>
                 </Form>
               </Card>
-            </div>
+                                </div>
           </TabsContent>
 
           {session.user.role === 'worker' && (
@@ -821,22 +821,22 @@ export default function ProfileManagement() {
                 <Form {...profileForm}>
                   <form onSubmit={profileForm.handleSubmit(onProfileSubmit)}>
                     <CardContent>
-                      <FormField
-                        control={profileForm.control}
+                            <FormField
+                              control={profileForm.control}
                         name="worker_role"
-                        render={({ field }) => (
-                          <FormItem>
+                              render={({ field }) => (
+                                <FormItem>
                             <FormLabel>Select Role</FormLabel>
                             <Select
                               disabled={!isEditing || isLoading}
                               onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
-                              <FormControl>
+                                  <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select a role" />
                                 </SelectTrigger>
-                              </FormControl>
+                                  </FormControl>
                               <SelectContent>
                                 {WORKER_ROLES.map((role) => (
                                   <SelectItem key={role.value} value={role.value}>
@@ -845,35 +845,35 @@ export default function ProfileManagement() {
                                 ))}
                               </SelectContent>
                             </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </CardContent>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                      </CardContent>
 
-                    {isEditing && (
+                        {isEditing && (
                       <CardFooter>
                         <Button type="submit" disabled={isLoading}>
                           {isLoading ? (
-                            <>
+                              <>
                               <span className="loading loading-spinner loading-sm mr-2"></span>
                               Updating...
-                            </>
-                          ) : (
-                            <>
+                              </>
+                            ) : (
+                              <>
                               <Save className="w-4 h-4 mr-2" />
                               Update Role
-                            </>
-                          )}
-                        </Button>
+                              </>
+                            )}
+                          </Button>
                       </CardFooter>
                     )}
                   </form>
                 </Form>
-              </Card>
-            </TabsContent>
+                    </Card>
+                  </TabsContent>
           )}
-        </Tabs>
+                </Tabs>
       </div>
     </div>
   )

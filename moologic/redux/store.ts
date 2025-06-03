@@ -10,7 +10,7 @@ import alertReducer from "./features/alert/alertSlice";
 import farmReducer from "./features/farm/farmSlice";
 import { cattleApi } from "@/lib/service/cattleService";
 import { inseminationApi } from "@/lib/service/inseminationService";
-import { milkApi } from "@/lib/service/milkService";
+import { milkService } from "@/lib/service/milkService";
 import { healthApi } from "@/lib/service/healthService";
 
 export const store = configureStore({
@@ -26,13 +26,13 @@ export const store = configureStore({
     farm: farmReducer,
     [cattleApi.reducerPath]: cattleApi.reducer,
     [inseminationApi.reducerPath]: inseminationApi.reducer, // Add inseminationApi reducer
-    [milkApi.reducerPath]: milkApi.reducer,
+    [milkService.reducerPath]: milkService.reducer,
     [healthApi.reducerPath]: healthApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: false,
-    }).concat(cattleApi.middleware, inseminationApi.middleware, milkApi.middleware, healthApi.middleware),
+    }).concat(cattleApi.middleware, inseminationApi.middleware, milkService.middleware, healthApi.middleware),
 });
 
 setupListeners(store.dispatch);

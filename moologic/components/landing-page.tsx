@@ -29,10 +29,10 @@ export function LandingPage() {
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 relative">
-              <Image src="/logo.svg" alt="MooLogic Logo" width={40} height={40} className="text-primary" priority />
+              <Image src="/logo.svg" alt="Loonkoo Logo" width={40} height={40} className="text-primary" priority />
             </div>
             <div>
-              <h1 className="text-xl font-bold">MooLogic</h1>
+              <h1 className="text-xl font-bold">Loonkoo</h1>
               <p className="text-xs text-muted-foreground">{t("Dairy Farm Management")}</p>
             </div>
           </div>
@@ -173,7 +173,7 @@ export function LandingPage() {
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-4">{t("Comprehensive Farm Management")}</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              {t("MooLogic provides all the tools you need to efficiently manage your dairy farm operations.")}
+              {t("Loonkoo provides all the tools you need to efficiently manage your dairy farm operations.")}
             </p>
           </div>
 
@@ -226,7 +226,7 @@ export function LandingPage() {
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-4">{t("What Our Users Say")}</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              {t("Hear from dairy farmers who have transformed their operations with MooLogic.")}
+              {t("Hear from dairy farmers who have transformed their operations with Loonkoo.")}
             </p>
           </div>
 
@@ -234,7 +234,7 @@ export function LandingPage() {
             <TestimonialCard
               name="John Smith"
               role="Dairy Farmer, 200 cows"
-              quote="MooLogic has completely transformed how we manage our farm. The milk production tracking alone has helped us increase yields by 15%."
+              quote="Loonkoo has completely transformed how we manage our farm. The milk production tracking alone has helped us increase yields by 15%."
             />
             <TestimonialCard
               name="Maria Rodriguez"
@@ -244,7 +244,7 @@ export function LandingPage() {
             <TestimonialCard
               name="David Johnson"
               role="Small Farm Owner"
-              quote="Even for our small operation, MooLogic has been worth every penny. The financial tools have helped us become profitable for the first time in years."
+              quote="Even for our small operation, Loonkoo has been worth every penny. The financial tools have helped us become profitable for the first time in years."
             />
           </div>
         </div>
@@ -314,7 +314,7 @@ export function LandingPage() {
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl font-bold mb-4">{t("Ready to Transform Your Dairy Farm?")}</h2>
             <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
-              {t("Join thousands of dairy farmers who have improved their operations with MooLogic.")}
+              {t("Join thousands of dairy farmers who have improved their operations with Loonkoo.")}
             </p>
             <Link href="/auth/register">
               <Button size="lg">
@@ -332,10 +332,10 @@ export function LandingPage() {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center gap-2 mb-4 md:mb-0">
               <div className="w-8 h-8 relative">
-                <Image src="/logo.svg" alt="MooLogic Logo" width={32} height={32} className="text-primary" />
+                <Image src="/logo.svg" alt="Loonkoo Logo" width={32} height={32} className="text-primary" />
               </div>
               <div>
-                <h2 className="text-lg font-bold">MooLogic</h2>
+                <h2 className="text-lg font-bold">Loonkoo</h2>
                 <p className="text-xs text-muted-foreground">{t("Dairy Farm Management")}</p>
               </div>
             </div>
@@ -355,7 +355,7 @@ export function LandingPage() {
             </div>
           </div>
           <div className="mt-8 text-center text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} MooLogic. {t("All rights reserved.")}
+            &copy; {new Date().getFullYear()} Loonkoo. {t("All rights reserved.")}
           </div>
         </div>
       </footer>

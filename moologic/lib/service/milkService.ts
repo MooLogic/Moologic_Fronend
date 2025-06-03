@@ -116,4 +116,7 @@ export const {
   useGetFarmProductionLast30DaysQuery,
   useGetFarmProductionLast90DaysQuery,
   useGetTodayProductionStatsQuery,
+  useAddMilkRecordMutation,
+  useUpdateMilkRecordMutation,
+  useDeleteMilkRecordMutation,
 } = milkService 

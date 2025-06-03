@@ -124,12 +124,7 @@ export function CollapsibleSidebar({ className }: SidebarProps) {
       href: "/finance",
       active: pathname === "/finance",
     },
-    {
-      label: t("Statistics"),
-      icon: BarChart3,
-      href: "/statistics",
-      active: pathname === "/statistics",
-    },
+    
     {
       label: t("Notifications"),
       icon: Bell,
@@ -187,10 +182,10 @@ export function CollapsibleSidebar({ className }: SidebarProps) {
           <div className="p-4 border-b flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 relative">
-                <Image src="/logo.svg" alt="MooLogic Logo" width={40} height={40} className="text-primary" priority />
+                <Image src="/logo.svg" alt="LoonKoo Logo" width={40} height={40} className="text-primary" priority />
               </div>
               <div>
-                <h2 className="text-xl font-bold">MooLogic</h2>
+                <h2 className="text-xl font-bold">Loonkoo</h2>
                 <p className="text-xs text-gray-500 dark:text-gray-400">{t("Dairy Farm Management")}</p>
               </div>
             </div>
@@ -228,11 +223,11 @@ export function CollapsibleSidebar({ className }: SidebarProps) {
         <div className={cn("p-4 border-b flex items-center", collapsed ? "justify-center" : "justify-between")}>
           <div className={cn("flex items-center gap-2", collapsed ? "justify-center" : "")}>
             <div className="w-10 h-10 relative flex-shrink-0">
-              <Image src="/logo.svg" alt="MooLogic Logo" width={40} height={40} className="text-primary" priority />
+              <Image src="/logo.svg" alt="Loonkoo Logo" width={40} height={40} className="text-primary" priority />
             </div>
             {!collapsed && (
               <div>
-                <h2 className="text-xl font-bold">MooLogic</h2>
+                <h2 className="text-xl font-bold">Loonkoo</h2>
                 <p className="text-xs text-gray-500 dark:text-gray-400">{t("Dairy Farm Management")}</p>
               </div>
             )}

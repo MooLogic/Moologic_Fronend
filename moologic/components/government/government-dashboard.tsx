@@ -14,43 +14,48 @@ import { HealthAlerts } from "@/components/government/health-alerts"
 import { ProductionTrends } from "@/components/government/production-trends"
 import { Building2, LogOut, BarChart3, MapPin, AlertTriangle, TrendingUp, Users } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
+import { useGetNationalFarmStatsQuery, useGetNationalHealthStatsQuery, useGetNationalReproductionStatsQuery, useGetNationalMilkProductionQuery, useGetNationalMilkingStatsQuery, useGetNationalFinanceStatsQuery, useGetNationalExpenseCategoriesQuery } from "@/lib/service/governmentDashboard"
+import { useSession } from "next-auth/react"
+import { canAccessFeature } from "@/lib/utils/role-utils"
 
 export function GovernmentDashboard() {
   const router = useRouter()
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState("overview")
-  const [userData, setUserData] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
   const [filters, setFilters] = useState({
     region: "all",
     farmType: "all",
     searchQuery: "",
   })
 
+  // Get session data
+  const { data: session } = useSession()
+  const token = session?.user?.accessToken
+  const user = session?.user
+  const workerRole = user?.worker_role
+
+  // Determine which queries to fetch based on worker role
+  const { data: farmStats, isLoading: loadingFarmStats } = useGetNationalFarmStatsQuery({ token })
+  const { data: healthStats, isLoading: loadingHealthStats } = useGetNationalHealthStatsQuery({ token })
+  const { data: reproductionStats, isLoading: loadingReproductionStats } = useGetNationalReproductionStatsQuery({ token })
+  const { data: milkProduction, isLoading: loadingMilkProduction } = useGetNationalMilkProductionQuery({ token })
+  const { data: milkingStats, isLoading: loadingMilkingStats } = useGetNationalMilkingStatsQuery({ token })
+  const { data: financeStats, isLoading: loadingFinanceStats } = useGetNationalFinanceStatsQuery({ token })
+  const { data: expenseCategories, isLoading: loadingExpenseCategories } = useGetNationalExpenseCategoriesQuery({ token })
+
+  // Filter out stats based on worker role
+  const showHealthStats = canAccessFeature(workerRole, 'health')
+  const showMilkStats = canAccessFeature(workerRole, 'milk')
+  const showFinanceStats = canAccessFeature(workerRole, 'finance')
+
+  const isLoading = loadingFarmStats || loadingHealthStats || loadingReproductionStats || loadingMilkProduction || loadingMilkingStats || loadingFinanceStats || loadingExpenseCategories
+
   useEffect(() => {
-    // Check if user is logged in and has government role
-    const governmentUser = localStorage.getItem("governmentUser")
-    const userRole = localStorage.getItem("userRole")
-
-    if (!governmentUser || userRole !== "government") {
-      router.push("/auth/login")
-      return
+    // Handle loading state based on RTK Query hooks
+    if (!isLoading) {
+      console.log("All data loaded successfully")
     }
-
-    try {
-      const parsedUser = JSON.parse(governmentUser)
-      setUserData(parsedUser)
-    } catch (error) {
-      console.error("Error parsing user data:", error)
-    }
-
-    // Simulate loading data
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 1000)
-
-    return () => clearTimeout(timer)
-  }, [router])
+  }, [isLoading])
 
   const handleLogout = () => {
     // Clear government user data
@@ -88,7 +93,7 @@ export function GovernmentDashboard() {
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Government Oversight Dashboard</h1>
               <p className="text-muted-foreground">
-                {userData?.department} | {userData?.region === "all" ? "All Regions" : userData?.region}
+                {user?.department} | {user?.region === "all" ? "All Regions" : user?.region}
               </p>
             </div>
             <Button variant="outline" onClick={handleLogout}>

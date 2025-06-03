@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Eye, AlertTriangle, AlertCircle, WormIcon as Virus } from "lucide-react"
+import { Eye, AlertTriangle, AlertCircle, Bug as Virus } from "lucide-react"
 import { motion } from "framer-motion"
 
 // Sample data for health alerts

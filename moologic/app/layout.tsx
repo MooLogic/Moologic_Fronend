@@ -6,7 +6,7 @@ import { Providers } from "@/components/providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "MooLogic - Dairy Farm Management",
+  title: "Loonkoo - Dairy Farm Management",
   description: "Comprehensive dairy farm management system",
 };
 

@@ -178,16 +178,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else if (!effectiveRole && pathname !== "/auth/role-selection") {
       targetPath = "/auth/role-selection";
     } else if (
+      effectiveRole === "government" &&
+      pathname !== "/government/dashboard"
+    ) {
+      // For government users, redirect to dashboard only if they're not already there
+      targetPath = "/government/dashboard";
+    } else if (
       effectiveRole === "owner" &&
       !effectiveFarm &&
       pathname !== "/auth/create-farm"
     ) {
       targetPath = "/auth/create-farm";
-    } else if (
-      effectiveRole === "government" &&
-      !pathname.startsWith("/government/dashboard")
-    ) {
-      targetPath = "/government/dashboard";
     } else if (
       effectiveRole === "worker" &&
       !effectiveFarm &&

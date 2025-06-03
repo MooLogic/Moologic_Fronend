@@ -159,6 +159,7 @@ export const cattleApi = createApi({
 });
 
 export const {
+  useGetLactatingCattleQuery,
   useGetPregnantCattleQuery,
   useGetBirthRecordsQuery,
   useCreateBirthRecordMutation,

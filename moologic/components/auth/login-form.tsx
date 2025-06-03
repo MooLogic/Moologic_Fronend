@@ -69,7 +69,7 @@ export function LoginForm() {
         localStorage.removeItem("userRole")
         toast({
           title: t("Login successful"),
-          description: t("Welcome back to MooLogic!"),
+          description: t("Welcome back to LoonKoo!"),
         })
         router.push("/dashboard")
       }
