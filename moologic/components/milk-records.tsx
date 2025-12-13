@@ -380,7 +380,8 @@ export function MilkRecords() {
       </div>
 
       {/* Records Table */}
-      <div className="bg-white rounded-lg border overflow-hidden">
+      <Card>
+        <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
@@ -442,7 +443,8 @@ export function MilkRecords() {
             ))}
           </TableBody>
         </Table>
-                </div>
+        </CardContent>
+      </Card>
 
       {/* Add Record Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -614,7 +616,8 @@ function LoadingState() {
         ))}
       </div>
       <Skeleton className="h-12 w-full mb-6" />
-        <div className="bg-white rounded-lg border overflow-hidden">
+        <Card>
+          <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
@@ -637,7 +640,8 @@ function LoadingState() {
             ))}
             </TableBody>
           </Table>
-        </div>
+          </CardContent>
+        </Card>
       </div>
   )
 }

@@ -235,11 +235,9 @@ export function MilkProductionStatsChart({ data = [], isLoading = false }: MilkP
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         return (
-                          <div className="bg-white dark:bg-gray-800 p-2 border rounded-lg shadow-lg">
-                            <p className="font-medium">{payload[0].payload.name}</p>
-                            <p className="text-sm">
-                              Average: {payload[0].value?.toFixed(1)} L
-                            </p>
+                          <div className="p-2">
+                            <div className="font-medium">{payload[0].payload.name}</div>
+                            <div className="text-sm">Average: {payload[0].value?.toFixed(1)} L</div>
                           </div>
                         )
                       }
@@ -417,12 +415,14 @@ function calculateTrend(data: ChartData[]) {
 
 function StatCard({ title, value, unit, trend = false }: { title: string; value: number; unit: string; trend?: boolean }) {
   return (
-    <div className="p-4 border rounded-lg">
-      <p className="text-sm text-muted-foreground">{title}</p>
-      <p className={`text-2xl font-bold ${trend && value < 0 ? 'text-red-500' : 'text-green-500'}`}>
-        {value.toFixed(1)}{unit}
-      </p>
-    </div>
+    <Card>
+      <CardContent className="p-4">
+        <p className="text-sm text-muted-foreground">{title}</p>
+        <p className={`text-2xl font-bold ${trend && value < 0 ? 'text-red-500' : 'text-green-500'}`}>
+          {value.toFixed(1)}{unit}
+        </p>
+      </CardContent>
+    </Card>
   )
 }
 

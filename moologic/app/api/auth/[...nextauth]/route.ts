@@ -86,7 +86,7 @@ export const authOptions = {
             return {
               id: data.user.id,
               email: data.user.email,
-              name: data.user.username,
+              name: data.user.full_name || data.user.username || data.user.email,
               role: data.user.role || "user",
               farm: data.user.farm || null,
               accessToken: data.access_token,

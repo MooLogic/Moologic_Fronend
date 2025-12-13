@@ -1,6 +1,5 @@
 "use client"
 
-import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 
@@ -26,16 +25,9 @@ export function TopCows({ data }: TopCowsProps) {
       {/* Add a check to ensure cows exists before mapping */}
       {data && data.length > 0 ? (
         data.map((cow, index) => (
-          <motion.div
-            key={index}
-            className="flex items-center justify-between gap-4"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4, delay: index * 0.2 }}
-            whileHover={{
-              scale: 1.02,
-              transition: { duration: 0.2 },
-            }}
+          <div
+            key={cow.id ?? index}
+            className="flex items-center justify-between gap-4 fade-in hover-raise"
           >
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-lg overflow-hidden">
@@ -49,7 +41,7 @@ export function TopCows({ data }: TopCowsProps) {
             <Button variant="link" className="text-indigo-600 hover:text-indigo-700" onClick={() => router.push(`/milk-yield/cattle/${cow.id}`)}>
               Detail
             </Button>
-          </motion.div>
+          </div>
         ))
       ) : (
         <div className="text-center py-4 text-gray-500">No top performing cows to display</div>

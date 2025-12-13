@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { motion } from "framer-motion"
+// framer-motion removed — replaced with CSS-based utilities for subtle motion
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ThemeLanguageToggle } from "@/components/theme-language-toggle"
@@ -52,105 +52,32 @@ export function LandingPage() {
 
       {/* Hero Section with Animated Background */}
       <section className="relative pt-32 pb-20 overflow-hidden">
-        {/* Animated Background Elements */}
+        {/* Decorative Background Elements (static for performance) */}
         <div className="absolute inset-0 overflow-hidden">
-          <motion.div
-            className="absolute top-20 left-10 w-72 h-72 rounded-full bg-primary/20 blur-3xl"
-            animate={{
-              x: [0, 50, 0],
-              y: [0, 30, 0],
-              scale: [1, 1.1, 1],
-            }}
-            transition={{
-              duration: 15,
-              repeat: Number.POSITIVE_INFINITY,
-              repeatType: "reverse",
-            }}
-          />
-          <motion.div
-            className="absolute bottom-20 right-10 w-96 h-96 rounded-full bg-primary/30 blur-3xl"
-            animate={{
-              x: [0, -70, 0],
-              y: [0, 50, 0],
-              scale: [1, 1.2, 1],
-            }}
-            transition={{
-              duration: 18,
-              repeat: Number.POSITIVE_INFINITY,
-              repeatType: "reverse",
-            }}
-          />
-          <motion.div
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-blue-400/20 blur-3xl"
-            animate={{
-              scale: [1, 1.5, 1],
-              opacity: [0.3, 0.6, 0.3],
-            }}
-            transition={{
-              duration: 10,
-              repeat: Number.POSITIVE_INFINITY,
-              repeatType: "reverse",
-            }}
-          />
+          <div className="absolute top-20 left-10 w-72 h-72 rounded-full bg-primary/20 blur-3xl" />
+          <div className="absolute bottom-20 right-10 w-96 h-96 rounded-full bg-primary/30 blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-blue-400/20 blur-3xl" />
 
-          {/* Animated Cow Silhouettes */}
-          <motion.div
-            className="absolute bottom-10 left-[10%] w-20 h-20 opacity-10"
-            animate={{
-              x: [0, 100, 0],
-              y: [0, -20, 0],
-            }}
-            transition={{
-              duration: 25,
-              repeat: Number.POSITIVE_INFINITY,
-              repeatType: "reverse",
-            }}
-          >
+          <div className="absolute bottom-10 left-[10%] w-20 h-20 opacity-10">
             <Image src="/logo.svg" alt="Cow" width={80} height={80} />
-          </motion.div>
+          </div>
 
-          <motion.div
-            className="absolute top-40 right-[15%] w-16 h-16 opacity-10"
-            animate={{
-              x: [0, -80, 0],
-              y: [0, 30, 0],
-            }}
-            transition={{
-              duration: 20,
-              repeat: Number.POSITIVE_INFINITY,
-              repeatType: "reverse",
-            }}
-          >
+          <div className="absolute top-40 right-[15%] w-16 h-16 opacity-10">
             <Image src="/logo.svg" alt="Cow" width={64} height={64} />
-          </motion.div>
+          </div>
         </div>
 
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
-            <motion.h1
-              className="text-4xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-500"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-            >
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-500 fade-in">
               {t("Revolutionize Your Dairy Farm Management")}
-            </motion.h1>
-            <motion.p
-              className="text-xl text-muted-foreground mb-8"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-            >
+            </h1>
+            <p className="text-xl text-muted-foreground mb-8 fade-in" style={{ animationDelay: "120ms" }}>
               {t(
                 "Comprehensive tools for tracking milk production, livestock health, and farm finances all in one place.",
               )}
-            </motion.p>
-            <motion.div
-              className="flex flex-col sm:flex-row gap-4 justify-center"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-            >
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center fade-in" style={{ animationDelay: "240ms" }}>
               <Link href="/auth/register">
                 <Button size="lg" className="w-full sm:w-auto">
                   {t("Get Started")}
@@ -162,7 +89,7 @@ export function LandingPage() {
                   {t("Login")}
                 </Button>
               </Link>
-            </motion.div>
+                </div>
           </div>
         </div>
       </section>
@@ -178,13 +105,13 @@ export function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <FeatureCard
-              icon={Milk}
-              title={t("Milk Production Tracking")}
-              description={t(
-                "Monitor milk yield, quality, and production trends for individual cows and your entire herd.",
-              )}
-            />
+                  <FeatureCard
+                    icon={Milk}
+                    title={t("Milk Production Tracking")}
+                    description={t(
+                      "Monitor milk yield, quality, and production trends for individual cows and your entire herd.",
+                    )}
+                  />
             <FeatureCard
               icon={Baby}
               title={t("Gestation Management")}
@@ -365,7 +292,7 @@ export function LandingPage() {
 
 function FeatureCard({ icon: Icon, title, description }) {
   return (
-    <motion.div whileHover={{ y: -5 }} transition={{ duration: 0.3 }}>
+    <div className="hover-raise">
       <Card className="h-full">
         <CardContent className="pt-6">
           <div className="rounded-full bg-primary/10 p-3 w-12 h-12 flex items-center justify-center mb-4">
@@ -375,13 +302,13 @@ function FeatureCard({ icon: Icon, title, description }) {
           <p className="text-muted-foreground">{description}</p>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   )
 }
 
 function TestimonialCard({ name, role, quote }) {
   return (
-    <motion.div whileHover={{ y: -5 }} transition={{ duration: 0.3 }}>
+    <div className="hover-raise">
       <Card className="h-full">
         <CardContent className="pt-6">
           <div className="mb-4">
@@ -396,13 +323,13 @@ function TestimonialCard({ name, role, quote }) {
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   )
 }
 
 function PricingCard({ title, price, description, features, buttonText, buttonVariant, highlighted = false }) {
   return (
-    <motion.div whileHover={{ y: -5 }} transition={{ duration: 0.3 }}>
+    <div className="hover-raise">
       <Card className={`h-full ${highlighted ? "border-primary shadow-lg" : ""}`}>
         <CardContent className="pt-6">
           <div className="text-center mb-6">
@@ -426,7 +353,7 @@ function PricingCard({ title, price, description, features, buttonText, buttonVa
           </Button>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   )
 }
 

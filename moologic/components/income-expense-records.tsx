@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from "@/components/providers/language-provider";
 import { 
   useCreateIncomeMutation,
@@ -405,7 +406,8 @@ export function IncomeExpenseRecords() {
 
         <TabsContent value="income">
           {/* Income Records Table */}
-          <div className="bg-white rounded-lg border overflow-hidden">
+          <Card>
+            <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -437,12 +439,14 @@ export function IncomeExpenseRecords() {
                 ))}
               </TableBody>
             </Table>
-          </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="expense">
           {/* Expense Records Table */}
-          <div className="bg-white rounded-lg border overflow-hidden">
+          <Card>
+            <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -474,7 +478,8 @@ export function IncomeExpenseRecords() {
                 ))}
               </TableBody>
             </Table>
-          </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 

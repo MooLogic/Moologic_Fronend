@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Calendar, Clock, AlertCircle, CheckCircle, CalendarIcon, Stethoscope, Scale, Activity } from 'lucide-react'
 import { DatePicker } from './date-picker'
-import { motion } from 'framer-motion'
+ 
 import { GestationTimeline } from './gestation-timeline'
 import { useGetCattleDataQuery, useGetGestationDataQuery } from '@/lib/service/cattleService'
 import { format } from 'date-fns'
@@ -95,32 +95,13 @@ export function GestationDashboard() {
 
       <div className="space-y-6">
         <div className="flex flex-col gap-2">
-          <motion.h1
-            className="text-3xl font-bold tracking-tight"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            {t("Gestation Management")}
-          </motion.h1>
-          <motion.p
-            className="text-muted-foreground"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            {t("Track and manage pregnancies, calvings, and inseminations.")}
-          </motion.p>
+          <h1 className="text-3xl font-bold tracking-tight fade-in">{t("Gestation Management")}</h1>
+          <p className="text-muted-foreground fade-in">{t("Track and manage pregnancies, calvings, and inseminations.")}</p>
         </div>
 
-        <motion.div
-          className="flex justify-end"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
+        <div className="flex justify-end fade-in">
           <DatePicker date={date} setDate={setDate} />
-        </motion.div>
+        </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className="bg-muted/50 backdrop-blur-sm">
@@ -129,11 +110,7 @@ export function GestationDashboard() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
+            <div className="fade-in">
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -191,15 +168,11 @@ export function GestationDashboard() {
                   </CardContent>
                 </Card>
               </div>
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
+            <div className="fade-in">
               <GestationTimeline animals={cattleData?.results || []} />
-            </motion.div>
+            </div>
           </TabsContent>
 
           <TabsContent value="details" className="space-y-6">
@@ -211,8 +184,9 @@ export function GestationDashboard() {
                 <CardContent>
                   <div className="space-y-6">
                     {pregnantCattle.map((cow) => (
-                    <div key={cow.id} className="border rounded-lg p-6 bg-card">
-                      <div className="space-y-6">
+                    <Card key={cow.id} className="p-6">
+                      <CardContent>
+                        <div className="space-y-6">
                         {/* Header Section */}
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
@@ -336,8 +310,9 @@ export function GestationDashboard() {
                   </div>
                       </div>
                         )}
-                      </div>
-                    </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   ))}
                   </div>
                 </CardContent>

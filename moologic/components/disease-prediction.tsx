@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useTheme } from "@/components/providers/theme-provider"
 import { useTranslation } from "@/components/providers/language-provider"
-import { motion } from "framer-motion"
+// framer-motion removed — prefer CSS utilities for simple animations
 import { Upload, Camera, AlertCircle, CheckCircle, Loader2 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { useDispatch } from "react-redux"

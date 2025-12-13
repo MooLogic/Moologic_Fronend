@@ -14,7 +14,7 @@ import {
   Bar,
   BarChart,
 } from "recharts"
-import { motion } from "framer-motion"
+ 
 import { useState } from "react"
 
 // Sample data for production trends
@@ -89,7 +89,7 @@ export function ProductionTrends() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+        <div className="fade-in">
           <Card>
             <CardHeader>
               <CardTitle>National Production Trends</CardTitle>
@@ -126,13 +126,9 @@ export function ProductionTrends() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-        >
+        <div className="fade-in">
           <Card>
             <CardHeader>
               <CardTitle>Regional Production Distribution</CardTitle>
@@ -153,15 +149,11 @@ export function ProductionTrends() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-        >
+        <div className="fade-in">
           <Card>
             <CardHeader>
               <CardTitle>Production Efficiency Trends</CardTitle>
@@ -189,13 +181,9 @@ export function ProductionTrends() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.3 }}
-        >
+        <div className="fade-in">
           <Card>
             <CardHeader>
               <CardTitle>Farm Growth vs Production</CardTitle>
@@ -239,14 +227,10 @@ export function ProductionTrends() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.4 }}
-      >
+      <div className="fade-in">
         <Card>
           <CardHeader>
             <CardTitle>Key Production Insights</CardTitle>
@@ -297,7 +281,7 @@ export function ProductionTrends() {
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
     </div>
   )
 }

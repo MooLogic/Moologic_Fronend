@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
+ 
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts"
 import { useMobile } from "@/hooks/use-mobile"
 
@@ -110,29 +110,18 @@ export function LactationDonutChart({ data }: LactationDonutChartProps) {
           </PieChart>
         </ResponsiveContainer>
 
-        <motion.div
-          className="absolute inset-0 flex items-center justify-center flex-col"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: chartLoaded ? 1 : 0, scale: chartLoaded ? 1 : 0.8 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        >
+        <div className="absolute inset-0 flex items-center justify-center flex-col fade-in">
           <div className={`${isMobile ? "text-3xl" : "text-4xl"} font-bold`}>80%</div>
           <div className="text-sm text-gray-500">Lactating</div>
-        </motion.div>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 mt-4">
         {chartData.map((item, index) => (
-          <motion.div
-            key={index}
-            className="flex items-center gap-2"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.5 + index * 0.1 }}
-          >
+          <div key={index} className="flex items-center gap-2 fade-in">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[item.name.toLowerCase() as keyof typeof COLORS] }} />
             <span className="text-sm text-gray-600 dark:text-gray-300">{item.name}</span>
-          </motion.div>
+          </div>
         ))}
       </div>
     </div>

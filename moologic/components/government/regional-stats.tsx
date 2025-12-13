@@ -16,7 +16,7 @@ import {
   Pie,
   Cell,
 } from "recharts"
-import { motion } from "framer-motion"
+ 
 import { AlertCircle, TrendingUp, TrendingDown } from "lucide-react"
 
 // Sample data for regional statistics
@@ -71,7 +71,7 @@ export function RegionalStats() {
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+        <div className="fade-in">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-500">Registered Farms</CardTitle>
@@ -91,13 +91,9 @@ export function RegionalStats() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-        >
+        <div className="fade-in">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-500">Total Cattle</CardTitle>
@@ -117,13 +113,9 @@ export function RegionalStats() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-        >
+        <div className="fade-in">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-500">Milk Production (L)</CardTitle>
@@ -143,13 +135,9 @@ export function RegionalStats() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.3 }}
-        >
+        <div className="fade-in">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-500">Disease Outbreaks</CardTitle>
@@ -169,15 +157,11 @@ export function RegionalStats() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
       </div>
 
       {/* Alert */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.4 }}
-      >
+      <div className="fade-in">
         <Card className="border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950">
           <CardContent className="p-4 flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
@@ -190,15 +174,11 @@ export function RegionalStats() {
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.5 }}
-        >
+        <div className="fade-in">
           <Card>
             <CardHeader>
               <CardTitle>Regional Distribution</CardTitle>
@@ -221,13 +201,9 @@ export function RegionalStats() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.6 }}
-        >
+        <div className="fade-in">
           <Card>
             <CardHeader>
               <CardTitle>Monthly Milk Production</CardTitle>
@@ -256,15 +232,11 @@ export function RegionalStats() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.7 }}
-        >
+        <div className="fade-in">
           <Card>
             <CardHeader>
               <CardTitle>Farm Types Distribution</CardTitle>
@@ -294,13 +266,9 @@ export function RegionalStats() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.8 }}
-        >
+        <div className="fade-in">
           <Card>
             <CardHeader>
               <CardTitle>Disease Incidents by Region</CardTitle>
@@ -321,7 +289,7 @@ export function RegionalStats() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
       </div>
     </div>
   )

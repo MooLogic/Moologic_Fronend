@@ -100,8 +100,9 @@ export function CalvingRecords() {
         </div>
 
         {/* Records Table */}
-        <div className="bg-white rounded-lg border overflow-hidden">
-          <Table>
+          <Card>
+            <CardContent>
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Cattle ID</TableHead>
@@ -145,7 +146,8 @@ export function CalvingRecords() {
               )}
             </TableBody>
           </Table>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Add/Edit Dialog */}
         <CalvingRecordForm

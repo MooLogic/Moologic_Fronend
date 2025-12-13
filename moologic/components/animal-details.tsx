@@ -1,7 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import { Plus, AlertTriangle } from "lucide-react"
+import { Plus, AlertTriangle, ArrowLeft, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -15,47 +14,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useRouter } from "next/navigation"
-
-// Interface for Cattle data
-interface Cattle {
-  id: string
-  ear_tag_no: string
-  breed?: string
-  birth_date?: string
-  gender: "male" | "female"
-  life_stage: "calf" | "heifer" | "cow" | "bull"
-  dam_id?: string
-  sire_id?: string
-  is_purchased: boolean
-  purchase_date?: string
-  purchase_source?: string
-  gestation_status: "not_pregnant" | "pregnant" | "calving"
-  health_status: "healthy" | "sick"
-  last_insemination_date?: string
-  last_calving_date?: string
-  expected_calving_date?: string
-  expected_insemination_date?: string
-  photo?: string
-  inseminations: Array<{
-    id: string
-    insemination_date: string
-    bull_id?: string
-    insemination_method: "natural" | "artificial"
-    insemination_status: "pending" | "successful" | "failed"
-  }>
-  birth_records: Array<{
-    id: string
-    calving_date: string
-    calving_outcome: "successful" | "complications"
-  }>
-  alerts: Array<{
-    id: string
-    message: string
-    due_date: string
-    priority: "Low" | "Medium" | "High" | "Emergency"
-    is_read: boolean
-  }>
-}
 
 export function AnimalDetails({ animalId }: { animalId: string }) {
   const { t } = useTranslation()
@@ -78,6 +36,18 @@ export function AnimalDetails({ animalId }: { animalId: string }) {
   )
 
   const router = useRouter()
+
+  const formatDateValue = (value?: string | null) =>
+    value ? format(new Date(value), "MMM d, yyyy") : "-"
+
+  const formatEnum = (value?: string) =>
+    value ? t(value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())) : "-"
+
+  const formatValue = (value?: string | number | null) =>
+    value === undefined || value === null || value === "" ? "-" : value
+
+  const formatArray = (value?: string[] | null) =>
+    value && value.length ? value.join(", ") : "-"
 
   if (!animalId) {
     return <div className="container mx-auto p-4 text-red-500">{t("Invalid cattle ID")}</div>
@@ -113,6 +83,12 @@ export function AnimalDetails({ animalId }: { animalId: string }) {
 
   return (
     <div className="container mx-auto p-4">
+      <div className="mb-4 flex items-center gap-2">
+        <Button variant="ghost" onClick={() => router.push("/livestock")}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          {t("Back to Livestock")}
+        </Button>
+      </div>
       <h1 className="text-2xl font-bold mb-6">{t("Animal Details")}</h1>
 
       <Tabs defaultValue="info">
@@ -140,83 +116,110 @@ export function AnimalDetails({ animalId }: { animalId: string }) {
                     </div>
                   )}
             </div>
-
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <div className="text-gray-500">{t("Ear Tag Number")}:</div>
-                  <div className="font-medium">{animal.ear_tag_no}</div>
-                </div>
-                <div>
-                  <div className="text-gray-500">{t("Birth Date")}:</div>
-                  <div className="font-medium">
-                    {animal.birth_date ? format(new Date(animal.birth_date), "MMM d, yyyy") : "-"}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <div className="text-gray-500">{t("Ear Tag Number")}:</div>
+                    <div className="font-medium">{animal.ear_tag_no}</div>
                   </div>
-                </div>
-                <div>
-                  <div className="text-gray-500">{t("Breed")}:</div>
-                  <div className="font-medium">{animal.breed || "-"}</div>
-                </div>
-                <div>
-                  <div className="text-gray-500">{t("Gender")}:</div>
-                  <div className="font-medium">{t(animal.gender.charAt(0).toUpperCase() + animal.gender.slice(1))}</div>
-                </div>
-                <div>
-                  <div className="text-gray-500">{t("Life Stage")}:</div>
-                  <div className="font-medium">{t(animal.life_stage.charAt(0).toUpperCase() + animal.life_stage.slice(1))}</div>
-                </div>
-                <div>
-                  <div className="text-gray-500">{t("Sire ID")}:</div>
-                  <div className="font-medium">{animal.sire_id || "-"}</div>
-                </div>
-                <div>
-                  <div className="text-gray-500">{t("Dam ID")}:</div>
-                  <div className="font-medium">{animal.dam_id || "-"}</div>
-                </div>
-                <div>
-                  <div className="text-gray-500">{t("Gestation Status")}:</div>
-                  <div className="font-medium">{t(animal.gestation_status.replace("_", " ").charAt(0).toUpperCase() + animal.gestation_status.slice(1))}</div>
-                </div>
-                <div>
-                  <div className="text-gray-500">{t("Health Status")}:</div>
-                  <div className="font-medium">{t(animal.health_status.charAt(0).toUpperCase() + animal.health_status.slice(1))}</div>
-                </div>
-                {animal.is_purchased && (
-                  <>
-                    <div>
-                      <div className="text-gray-500">{t("Purchase Date")}:</div>
-                      <div className="font-medium">
-                        {animal.purchase_date ? format(new Date(animal.purchase_date), "MMM d, yyyy") : "-"}
+                  <div>
+                    <div className="text-gray-500">{t("Breed")}:</div>
+                    <div className="font-medium">{formatValue(animal.breed)}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">{t("Birth Date")}:</div>
+                    <div className="font-medium">{formatDateValue(animal.birth_date)}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">{t("Gender")}:</div>
+                    <div className="font-medium">{formatEnum(animal.gender)}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">{t("Life Stage")}:</div>
+                    <div className="font-medium">{formatEnum(animal.life_stage)}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">{t("Life Stage Started")}:</div>
+                    <div className="font-medium">{formatDateValue(animal.life_stage_started_at)}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">{t("Sire ID")}:</div>
+                    <div className="font-medium">{formatValue(animal.sire_id)}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">{t("Dam ID")}:</div>
+                    <div className="font-medium">{formatValue(animal.dam_id)}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">{t("Gestation Status")}:</div>
+                    <div className="font-medium">{formatEnum(animal.gestation_status)}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">{t("Gestation Stage")}:</div>
+                    <div className="font-medium">{formatEnum(animal.gestation_stage)}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">{t("Health Status")}:</div>
+                    <div className="font-medium">{formatEnum(animal.health_status)}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">{t("Service Bull")}:</div>
+                    <div className="font-medium">{animal.is_service_bull ? t("Yes") : t("No")}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">{t("Birth Weight")}:</div>
+                    <div className="font-medium">{formatValue(animal.birth_weight)}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">{t("Current Weight")}:</div>
+                    <div className="font-medium">{formatValue(animal.current_weight)}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">{t("Weaning Date")}:</div>
+                    <div className="font-medium">{formatDateValue(animal.weaning_date)}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">{t("Weaning Weight")}:</div>
+                    <div className="font-medium">{formatValue(animal.weaning_weight)}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">{t("Milking Frequency")}:</div>
+                    <div className="font-medium">{formatEnum(animal.milking_frequency)}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">{t("Avg Daily Milk (L)")}:</div>
+                    <div className="font-medium">{formatValue(animal.avg_daily_milk)}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">{t("Custom Milking Times")}:</div>
+                    <div className="font-medium">{formatArray(animal.custom_milking_times as string[] | null)}</div>
+                  </div>
+                  {animal.is_purchased && (
+                    <>
+                      <div>
+                        <div className="text-gray-500">{t("Purchase Date")}:</div>
+                        <div className="font-medium">{formatDateValue(animal.purchase_date)}</div>
                       </div>
-                    </div>
-                    <div>
-                      <div className="text-gray-500">{t("Purchase Source")}:</div>
-                      <div className="font-medium">{animal.purchase_source || "-"}</div>
-                    </div>
-                  </>
-                )}
-                <div>
-                  <div className="text-gray-500">{t("Last Insemination")}:</div>
-                  <div className="font-medium">
-                    {animal.last_insemination_date ? format(new Date(animal.last_insemination_date), "MMM d, yyyy") : "-"}
+                      <div>
+                        <div className="text-gray-500">{t("Purchase Source")}:</div>
+                        <div className="font-medium">{formatValue(animal.purchase_source)}</div>
+                      </div>
+                    </>
+                  )}
+                  <div>
+                    <div className="text-gray-500">{t("Last Insemination")}:</div>
+                    <div className="font-medium">{formatDateValue(animal.last_insemination_date)}</div>
                   </div>
-                </div>
-                <div>
-                  <div className="text-gray-500">{t("Last Calving")}:</div>
-                  <div className="font-medium">
-                    {animal.last_calving_date ? format(new Date(animal.last_calving_date), "MMM d, yyyy") : "-"}
+                  <div>
+                    <div className="text-gray-500">{t("Last Calving")}:</div>
+                    <div className="font-medium">{formatDateValue(animal.last_calving_date)}</div>
                   </div>
-                </div>
-                <div>
-                  <div className="text-gray-500">{t("Expected Calving")}:</div>
-                  <div className="font-medium">
-                    {animal.expected_calving_date ? format(new Date(animal.expected_calving_date), "MMM d, yyyy") : "-"}
+                  <div>
+                    <div className="text-gray-500">{t("Expected Calving")}:</div>
+                    <div className="font-medium">{formatDateValue(animal.expected_calving_date)}</div>
                   </div>
-                </div>
-                <div>
-                  <div className="text-gray-500">{t("Expected Insemination")}:</div>
-                  <div className="font-medium">
-                    {animal.expected_insemination_date ? format(new Date(animal.expected_insemination_date), "MMM d, yyyy") : "-"}
-                    </div>
+                  <div>
+                    <div className="text-gray-500">{t("Expected Insemination")}:</div>
+                    <div className="font-medium">{formatDateValue(animal.expected_insemination_date)}</div>
                   </div>
                 </div>
               </CardContent>
@@ -226,6 +229,19 @@ export function AnimalDetails({ animalId }: { animalId: string }) {
 
         <TabsContent value="health">
           <div className="space-y-6">
+            {isLoadingHealth && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {t("Loading health records...")}
+              </div>
+            )}
+            {healthError && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>{t("Unable to load health data")}</AlertTitle>
+                <AlertDescription>{t("Please try again later.")}</AlertDescription>
+              </Alert>
+            )}
             <div className="flex gap-4 mb-6">
               <Button onClick={() => router.push(`/health-records?tab=vaccinations&cattle=${animalId}`)}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -261,7 +277,7 @@ export function AnimalDetails({ animalId }: { animalId: string }) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {healthRecords?.vaccinations.map((record) => (
+                    {healthRecords?.vaccinations?.map((record) => (
                       <TableRow key={record.id}>
                         <TableCell>{record.vaccination_name}</TableCell>
                         <TableCell>{format(new Date(record.vaccination_date), "PP")}</TableCell>
@@ -308,7 +324,7 @@ export function AnimalDetails({ animalId }: { animalId: string }) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {healthRecords?.treatments.map((record) => (
+                    {healthRecords?.treatments?.map((record) => (
                       <TableRow key={record.id}>
                         <TableCell>{record.treatment_name}</TableCell>
                         <TableCell>{record.treatment_description}</TableCell>
@@ -329,52 +345,56 @@ export function AnimalDetails({ animalId }: { animalId: string }) {
                 <CardTitle>{t("Periodic Vaccinations")}</CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t("Vaccination")}</TableHead>
-                      <TableHead>{t("Last Date")}</TableHead>
-                      <TableHead>{t("Next Due")}</TableHead>
-                      <TableHead>{t("Interval")}</TableHead>
-                      <TableHead>{t("Status")}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {healthRecords?.periodicVaccinations.map((record) => (
-                      <TableRow key={record.id}>
-                        <TableCell>{record.vaccination_name}</TableCell>
-                        <TableCell>{format(new Date(record.last_vaccination_date), "PP")}</TableCell>
-                        <TableCell>{format(new Date(record.next_vaccination_date), "PP")}</TableCell>
-                        <TableCell>
-                          {record.interval_days === 30
-                            ? t("Monthly")
-                            : record.interval_days === 90
-                            ? t("Quarterly")
-                            : record.interval_days === 180
-                            ? t("Semi-Annually")
-                            : t("Annually")}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              new Date(record.next_vaccination_date) < new Date()
-                                ? "destructive"
-                                : new Date(record.next_vaccination_date) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-                                ? "warning"
-                                : "default"
-                            }
-                          >
-                            {new Date(record.next_vaccination_date) < new Date()
-                              ? t("Overdue")
-                              : new Date(record.next_vaccination_date) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-                              ? t("Due Soon")
-                              : t("Scheduled")}
-                          </Badge>
-                        </TableCell>
+                {healthRecords?.periodicVaccinations?.length ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t("Vaccination")}</TableHead>
+                        <TableHead>{t("Last Date")}</TableHead>
+                        <TableHead>{t("Next Due")}</TableHead>
+                        <TableHead>{t("Interval")}</TableHead>
+                        <TableHead>{t("Status")}</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {healthRecords?.periodicVaccinations?.map((record) => (
+                        <TableRow key={record.id}>
+                          <TableCell>{record.vaccination_name}</TableCell>
+                          <TableCell>{format(new Date(record.last_vaccination_date), "PP")}</TableCell>
+                          <TableCell>{format(new Date(record.next_vaccination_date), "PP")}</TableCell>
+                          <TableCell>
+                            {record.interval_days === 30
+                              ? t("Monthly")
+                              : record.interval_days === 90
+                              ? t("Quarterly")
+                              : record.interval_days === 180
+                              ? t("Semi-Annually")
+                              : t("Annually")}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                new Date(record.next_vaccination_date) < new Date()
+                                  ? "destructive"
+                                  : new Date(record.next_vaccination_date) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                                  ? "warning"
+                                  : "default"
+                              }
+                            >
+                              {new Date(record.next_vaccination_date) < new Date()
+                                ? t("Overdue")
+                                : new Date(record.next_vaccination_date) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                                ? t("Due Soon")
+                                : t("Scheduled")}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="text-sm text-gray-500">{t("No periodic vaccinations recorded")}</div>
+                )}
               </CardContent>
             </Card>
 
@@ -384,56 +404,60 @@ export function AnimalDetails({ animalId }: { animalId: string }) {
                 <CardTitle>{t("Periodic Treatments")}</CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t("Treatment")}</TableHead>
-                      <TableHead>{t("Description")}</TableHead>
-                      <TableHead>{t("Last Date")}</TableHead>
-                      <TableHead>{t("Next Due")}</TableHead>
-                      <TableHead>{t("Interval")}</TableHead>
-                      <TableHead>{t("Status")}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {healthRecords?.periodicTreatments.map((record) => (
-                      <TableRow key={record.id}>
-                        <TableCell>{record.treatment_name}</TableCell>
-                        <TableCell>{record.treatment_description}</TableCell>
-                        <TableCell>{format(new Date(record.last_treatment_date), "PP")}</TableCell>
-                        <TableCell>{format(new Date(record.next_treatment_date), "PP")}</TableCell>
-                        <TableCell>
-                          {record.interval_days === 30
-                            ? t("Monthly")
-                            : record.interval_days === 90
-                            ? t("Quarterly")
-                            : record.interval_days === 180
-                            ? t("Semi-Annually")
-                            : t("Annually")}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              new Date(record.next_treatment_date) < new Date()
-                                ? "destructive"
-                                : new Date(record.next_treatment_date) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-                                ? "warning"
-                                : "default"
-                            }
-                          >
-                            {new Date(record.next_treatment_date) < new Date()
-                              ? t("Overdue")
-                              : new Date(record.next_treatment_date) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-                              ? t("Due Soon")
-                              : t("Scheduled")}
-                          </Badge>
-                        </TableCell>
+                {healthRecords?.periodicTreatments?.length ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t("Treatment")}</TableHead>
+                        <TableHead>{t("Description")}</TableHead>
+                        <TableHead>{t("Last Date")}</TableHead>
+                        <TableHead>{t("Next Due")}</TableHead>
+                        <TableHead>{t("Interval")}</TableHead>
+                        <TableHead>{t("Status")}</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-            </CardContent>
-          </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {healthRecords?.periodicTreatments?.map((record) => (
+                        <TableRow key={record.id}>
+                          <TableCell>{record.treatment_name}</TableCell>
+                          <TableCell>{record.treatment_description}</TableCell>
+                          <TableCell>{format(new Date(record.last_treatment_date), "PP")}</TableCell>
+                          <TableCell>{format(new Date(record.next_treatment_date), "PP")}</TableCell>
+                          <TableCell>
+                            {record.interval_days === 30
+                              ? t("Monthly")
+                              : record.interval_days === 90
+                              ? t("Quarterly")
+                              : record.interval_days === 180
+                              ? t("Semi-Annually")
+                              : t("Annually")}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                new Date(record.next_treatment_date) < new Date()
+                                  ? "destructive"
+                                  : new Date(record.next_treatment_date) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                                  ? "warning"
+                                  : "default"
+                              }
+                            >
+                              {new Date(record.next_treatment_date) < new Date()
+                                ? t("Overdue")
+                                : new Date(record.next_treatment_date) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                                ? t("Due Soon")
+                                : t("Scheduled")}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="text-sm text-gray-500">{t("No periodic treatments recorded")}</div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 

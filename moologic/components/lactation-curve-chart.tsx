@@ -30,14 +30,33 @@ export function LactationCurveChart({ data }: LactationCurveChartProps) {
 
   // Calculate statistics
   const actualData = data.filter(d => d.actual !== null)
-  const peakDay = actualData.reduce((max, curr) => 
-    (curr.actual || 0) > (actualData[max].actual || 0) ? curr.day : max
-  , 0)
+  let peakDay = 0
+  let peakProduction = 0
+  let persistency = 0
   
-  const peakProduction = actualData[peakDay]?.actual || 0
-  const persistency = actualData.length > 0 
-    ? ((actualData[actualData.length - 1]?.actual || 0) / peakProduction) * 100 
-    : 0
+  // Find peak production and its day
+  actualData.forEach(record => {
+    if (record.actual !== null) {
+      const actualValue = Number(record.actual)
+      if (actualValue > peakProduction) {
+        peakDay = record.day
+        peakProduction = actualValue
+      }
+    }
+  })
+  
+  // Handle case where there's no actual data
+  if (actualData.length > 0) {
+    // Calculate persistency only if peakProduction is not zero
+    const lastRecord = actualData[actualData.length - 1]
+    const lastProduction = Number(lastRecord?.actual || 0)
+    persistency = peakProduction > 0 
+      ? ((lastProduction / peakProduction) * 100)
+      : 0
+  }
+  
+  // Format persistency for display
+  const formattedPersistency = persistency.toFixed(1)
 
   // Custom tooltip
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -69,7 +88,7 @@ export function LactationCurveChart({ data }: LactationCurveChartProps) {
         </Card>
         <Card className="p-4">
           <p className="text-sm text-gray-500">{t("Persistency")}</p>
-          <p className="text-2xl font-bold">{persistency.toFixed(1)}%</p>
+          <p className="text-2xl font-bold">{persistency.toFixed(2)}%</p>
         </Card>
       </div>
       

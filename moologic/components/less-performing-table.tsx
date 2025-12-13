@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { useMobile } from "@/hooks/use-mobile"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Card, CardContent } from "@/components/ui/card"
 import { useRouter } from "next/navigation"
 
 interface LactatingCattle {
@@ -70,29 +71,31 @@ export function LessPerformingTable({ data = [], milkRecords = [], isLoading = f
     return (
       <div className="space-y-4">
         {cowPerformance.map((row, index) => (
-          <div key={index} className="border rounded-lg p-4 space-y-2">
-            <div className="flex justify-between">
-              <span className="font-medium">Ear tag no</span>
-              <span>{row.ear_tag_no}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="font-medium">Lactation Stage</span>
-              <span>{row.lactationStage}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="font-medium">Avg. Production</span>
-              <span>{row.avgProduction.toFixed(1)} L</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="font-medium">Difference</span>
-              <span className={row.difference < 0 ? "text-red-500" : "text-green-500"}>
-                {row.difference > 0 ? "+" : ""}{row.difference.toFixed(1)}%
-              </span>
-            </div>
-            <Button variant="link" className="text-indigo-600 hover:text-indigo-700 p-0" onClick={() => router.push(`/milk-yield/cattle/${row.id}`)}>
-              Detail
-            </Button>
-          </div>
+          <Card key={index}>
+            <CardContent className="space-y-2 p-4">
+              <div className="flex justify-between">
+                <span className="font-medium">Ear tag no</span>
+                <span>{row.ear_tag_no}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">Lactation Stage</span>
+                <span>{row.lactationStage}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">Avg. Production</span>
+                <span>{row.avgProduction.toFixed(1)} L</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">Difference</span>
+                <span className={row.difference < 0 ? "text-red-500" : "text-green-500"}>
+                  {row.difference > 0 ? "+" : ""}{row.difference.toFixed(1)}%
+                </span>
+              </div>
+              <Button variant="link" className="text-indigo-600 hover:text-indigo-700 p-0" onClick={() => router.push(`/milk-yield/cattle/${row.id}`)}>
+                Detail
+              </Button>
+            </CardContent>
+          </Card>
         ))}
       </div>
     )
@@ -137,11 +140,13 @@ function TableSkeleton({ isMobile }: { isMobile: boolean }) {
     return (
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="border rounded-lg p-4 space-y-2">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
-          </div>
+          <Card key={i}>
+            <CardContent className="space-y-2 p-4">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+            </CardContent>
+          </Card>
         ))}
       </div>
     )

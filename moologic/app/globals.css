@@ -119,3 +119,45 @@
   }
 }
 
+
+@layer components {
+  /* Reusable Card styles for consistent UI across pages */
+  .card {
+    @apply bg-card text-card-foreground rounded-lg border border-transparent shadow-sm transition duration-200 ease-out;
+  }
+  .card:hover {
+    @apply shadow-md border-border -translate-y-1;
+  }
+
+  /* Small card title and subtitle helpers */
+  .card-title {
+    @apply text-lg font-medium mb-2;
+  }
+  .card-sub {
+    @apply text-sm text-muted-foreground;
+  }
+
+  /* Simple fade-in animation to replace framer-motion entrance animations */
+  .fade-in {
+    animation: fade-in 240ms ease-out both;
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Hover raise utility for small micro-interactions */
+  .hover-raise {
+    @apply transform-gpu transition-transform duration-200 ease-out;
+  }
+  .hover-raise:hover {
+    @apply -translate-y-1;
+  }
+}
+

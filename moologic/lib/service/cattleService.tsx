@@ -1,325 +1,416 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { API_BASE_URL } from '@/lib/constants';
-import process from 'process';
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react"
+import { API_BASE_URL } from "@/lib/constants"
 
-// Define interfaces for the API data types
-interface Cattle {
-  id: string;
-  ear_tag_no: string;
-  breed?: string;
-  birth_date?: string;
-  gender: "male" | "female";
-  life_stage: "calf" | "heifer" | "cow" | "bull";
-  dam_id?: string;
-  sire_id?: string;
-  is_purchased: boolean;
-  purchase_date?: string;
-  purchase_source?: string;
-  gestation_status: "not_pregnant" | "pregnant" | "calving" | "in_oestrus" | "missed_oestrus" | "dry_off";
-  gestation_stage: "not_pregnant" | "first_trimester" | "second_trimester" | "third_trimester" | "calving";
-  health_status: "healthy" | "sick";
-  last_insemination_date?: string;
-  last_calving_date?: string;
-  expected_calving_date?: string;
-  expected_insemination_date?: string;
-  photo?: string | File;
-  created_at: string;
-  updated_at: string;
-  farm: number;
+export type LifeStage = "calf" | "heifer" | "cow" | "bull"
+export type GestationStatus =
+    | "not_pregnant"
+    | "in_oestrus"
+    | "missed_oestrus"
+    | "pregnant"
+    | "dry_off"
+    | "calving"
+export type GestationStage =
+    | "not_pregnant"
+    | "first_trimester"
+    | "second_trimester"
+    | "third_trimester"
+    | "calving"
+export type HealthStatus = "healthy" | "sick"
+export type MilkingFrequency = "once" | "twice" | "thrice"
+
+export interface Alert {
+    id: number
+    title?: string
+    description?: string
+    message?: string
+    priority: "low" | "medium" | "high" | "Emergency" | "High" | string
+    type?: string
+    read?: boolean
+    date?: string
+    source_type?: string
+    source_id?: string
+    metadata?: Record<string, unknown>
 }
 
-interface CattleResponse {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: Cattle[];
+export interface Cattle {
+    id: number
+    ear_tag_no: string
+    breed?: string
+    birth_date?: string | null
+    birth_weight?: string | null
+    current_weight?: string | null
+    weaning_date?: string | null
+    weaning_weight?: string | null
+    gender: "male" | "female"
+    life_stage: LifeStage
+    life_stage_started_at?: string | null
+    is_service_bull: boolean
+    dam_id?: string
+    sire_id?: string
+    is_purchased: boolean
+    purchase_date?: string | null
+    purchase_source?: string | null
+    last_insemination_date?: string | null
+    last_calving_date?: string | null
+    expected_calving_date?: string | null
+    expected_insemination_date?: string | null
+    gestation_status: GestationStatus
+    gestation_stage: GestationStage
+    health_status: HealthStatus
+    milking_frequency?: MilkingFrequency
+    custom_milking_times?: string[] | null
+    avg_daily_milk?: number | null
+    photo?: string | File | null
+    created_at?: string
+    updated_at?: string
+    farm: number
+}
+
+export interface CattleResponse {
+    count: number
+    next: string | null
+    previous: string | null
+    results: Cattle[]
 }
 
 interface ApiError {
-  status: number;
-  data: {
-    error?: string;
-    message?: string;
-    detail?: string;
-  };
+    status: number
+    data: {
+        error?: string
+        message?: string
+        detail?: string
+    }
 }
 
-// Add these interfaces after the existing interfaces
 interface BirthRecord {
-    id: number;
-    cattle: number;
-    mother_ear_tag: string;
-    calving_date: string;
-    calving_outcome: 'successful' | 'complications' | 'stillborn' | 'died_shortly_after';
-    calf_count: number;
-    calf_gender: string;
-    calf_weight: string;
-    calf_ear_tag: string;
-    complications?: string;
-    veterinary_assistance: boolean;
-    notes?: string;
-    created_at: string;
-    updated_at: string;
+    id: number
+    cattle: number
+    mother_ear_tag: string
+    calving_date: string
+    calving_outcome: "successful" | "complications" | "stillborn" | "died_shortly_after"
+    calf_count: number
+    calf_gender: string
+    calf_weight: string
+    calf_ear_tag: string
+    complications?: string
+    veterinary_assistance: boolean
+    notes?: string
+    created_at: string
+    updated_at: string
 }
 
 interface BirthRecordResponse {
-    birth_record: BirthRecord;
-    alerts: Alert[];
+    birth_record: BirthRecord
+    alerts: Alert[]
 }
 
 interface BirthHistoryResponse {
     cattle_info: {
-        ear_tag_no: string;
-        birth_date: string;
-        gender: string;
-    };
-    as_mother: BirthRecord[];
-    own_birth_record: BirthRecord | null;
+        ear_tag_no: string
+        birth_date: string
+        gender: string
+    }
+    as_mother: BirthRecord[]
+    own_birth_record: BirthRecord | null
 }
 
 interface GestationMilestone {
-    id: number;
-    milestone_type: string;
-    due_date: string;
-    completed_date?: string;
-    description: string;
-    is_completed: boolean;
+    id: number
+    milestone_type: string
+    due_date: string
+    completed_date?: string
+    description: string
+    is_completed: boolean
 }
 
 interface GestationCheck {
-    id: number;
-    check_date: string;
-    gestation_week: number;
-    health_status: 'normal' | 'attention' | 'critical';
-    weight?: number;
-    body_condition_score?: number;
-    notes?: string;
+    id: number
+    check_date: string
+    gestation_week: number
+    health_status: "normal" | "attention" | "critical"
+    weight?: number
+    body_condition_score?: number
+    notes?: string
 }
 
 interface GestationData {
     cattle: Cattle & {
-        gestation_progress: number;
-        trimester: number | null;
-        days_until_calving: number | null;
-        milestones: GestationMilestone[];
-        gestation_checks: GestationCheck[];
-    };
-    treatment_records: any[];
-    vaccination_records: any[];
-    periodic_treatment_records: any[];
-    periodic_vaccination_records: any[];
-    alerts: Alert[];
+        gestation_progress: number
+        trimester: number | null
+        days_until_calving: number | null
+        milestones: GestationMilestone[]
+        gestation_checks: GestationCheck[]
+    }
+    treatment_records: any[]
+    vaccination_records: any[]
+    periodic_treatment_records: any[]
+    periodic_vaccination_records: any[]
+    alerts: Alert[]
     gantt_data: {
-        tasks: any[];
-        start_date: string;
-        end_date: string;
-    } | null;
+        tasks: any[]
+        start_date: string
+        end_date: string
+    } | null
 }
 
 interface GestationDataResponse {
-    count: number;
-    results: GestationData[];
+    count: number
+    results: GestationData[]
 }
 
 interface TimelineEvent {
-    date: string;
-    type: 'milestone' | 'health_check' | 'treatment' | 'vaccination';
-    title: string;
-    description?: string;
-    status: string;
+    date: string
+    type: "milestone" | "health_check" | "treatment" | "vaccination"
+    title: string
+    description?: string
+    status: string
 }
 
 interface GestationTimeline {
-    cattle_id: number;
-    ear_tag_no: string;
-    gestation_progress: number;
-    trimester: number | null;
-    days_until_calving: number | null;
-    timeline_events: TimelineEvent[];
+    cattle_id: number
+    ear_tag_no: string
+    gestation_progress: number
+    trimester: number | null
+    days_until_calving: number | null
+    timeline_events: TimelineEvent[]
 }
 
-// Add this interface after the existing interfaces
 interface LactatingCattle {
-  id: number;
-  ear_tag_no: string;
-  name: string;
-  milking_frequency: number;
-  last_milking: string | null;
-  can_milk_now: boolean;
-  days_in_milk: number;
-  lactation_number: number;
+    id: number
+    ear_tag_no: string
+    name: string
+    milking_frequency: number
+    last_milking: string | null
+    can_milk_now: boolean
+    days_in_milk: number
+    lactation_number: number
 }
 
 interface LactatingCattleResponse {
-  count: number;
-  results: LactatingCattle[];
+    count: number
+    results: LactatingCattle[]
 }
 
-// Helper function to format dates for API
-const formatDateForApi = (date: string | undefined): string | undefined => {
-  if (!date) return undefined;
-  return new Date(date).toISOString().split('T')[0];
-};
+type CattleBaseInput = {
+    ear_tag_no: string
+    breed?: string
+    birth_date?: string | null
+    birth_weight?: string | null
+    current_weight?: string | null
+    weaning_date?: string | null
+    weaning_weight?: string | null
+    gender: "male" | "female"
+    life_stage: LifeStage
+    is_service_bull?: boolean
+    dam_id?: string
+    sire_id?: string
+    is_purchased: boolean
+    purchase_date?: string | null
+    purchase_source?: string | null
+    last_insemination_date?: string | null
+    last_calving_date?: string | null
+    expected_calving_date?: string | null
+    expected_insemination_date?: string | null
+    gestation_status?: GestationStatus
+    gestation_stage?: GestationStage
+    health_status?: HealthStatus
+    milking_frequency?: MilkingFrequency
+    custom_milking_times?: string[]
+    avg_daily_milk?: number | null
+    photo?: File | null
+}
 
-// Helper function to get error message from response
+export type CattleCreateRequest = CattleBaseInput & { accessToken: string }
+export type CattleUpdateRequest = Partial<CattleBaseInput> & { accessToken: string; id: number | string }
+
+const formatDateForApi = (date?: string | null): string | undefined => {
+    if (!date) return undefined
+    const parsed = new Date(date)
+    if (Number.isNaN(parsed.getTime())) return undefined
+    return parsed.toISOString().split("T")[0]
+}
+
+const appendFormValue = (formData: FormData, key: string, value: unknown) => {
+    if (value === undefined || value === null || value === "") return
+
+    if (value instanceof File) {
+        formData.append(key, value)
+        return
+    }
+
+    if (Array.isArray(value)) {
+        formData.append(key, JSON.stringify(value))
+        return
+    }
+
+    if (typeof value === "boolean") {
+        formData.append(key, value ? "true" : "false")
+        return
+    }
+
+    if (typeof value === "number") {
+        formData.append(key, value.toString())
+        return
+    }
+
+    formData.append(key, String(value))
+}
+
+const buildCattleFormData = (payload: Partial<CattleBaseInput>) => {
+    const formData = new FormData()
+    const { custom_milking_times, birth_date, weaning_date, purchase_date, last_insemination_date, last_calving_date, expected_calving_date, expected_insemination_date, ...rest } = payload
+
+    appendFormValue(formData, "birth_date", formatDateForApi(birth_date || undefined))
+    appendFormValue(formData, "weaning_date", formatDateForApi(weaning_date || undefined))
+    appendFormValue(formData, "purchase_date", formatDateForApi(purchase_date || undefined))
+    appendFormValue(formData, "last_insemination_date", formatDateForApi(last_insemination_date || undefined))
+    appendFormValue(formData, "last_calving_date", formatDateForApi(last_calving_date || undefined))
+    appendFormValue(formData, "expected_calving_date", formatDateForApi(expected_calving_date || undefined))
+    appendFormValue(formData, "expected_insemination_date", formatDateForApi(expected_insemination_date || undefined))
+
+    appendFormValue(formData, "custom_milking_times", custom_milking_times?.length ? custom_milking_times : undefined)
+
+    Object.entries(rest).forEach(([key, value]) => appendFormValue(formData, key, value))
+
+    return formData
+}
+
 const getErrorMessage = (response: any): string => {
-    if (!response) return 'An error occurred';
-    if (typeof response === 'string') return response;
-    
-    const data = response.data || {};
-    return data.error || data.message || data.detail || 'An error occurred';
-};
+    if (!response) return "An error occurred"
+    if (typeof response === "string") return response
+
+    const data = response.data || {}
+    return data.error || data.message || data.detail || "An error occurred"
+}
 
 export const cattleApi = createApi({
-    reducerPath: 'cattleApi',
+    reducerPath: "cattleApi",
     baseQuery: fetchBaseQuery({
         baseUrl: API_BASE_URL,
-        prepareHeaders: (headers, { getState }) => {
-            // Don't set Content-Type for FormData, let the browser set it with the boundary
-            return headers;
-        },
     }),
-    tagTypes: ['Cattle', 'PregnantCattle', 'GestationData', 'BirthRecords', 'LactatingCattle'],
+    tagTypes: ["Cattle", "PregnantCattle", "GestationData", "BirthRecords", "LactatingCattle"],
     endpoints: (builder) => ({
-        // Get all cattle
         getCattleData: builder.query<CattleResponse, { accessToken: string }>({
-            query: (data) => ({
-                url: 'core/cattle/',
-                method: 'GET',
+            query: ({ accessToken }) => ({
+                url: "core/cattle/",
+                method: "GET",
                 headers: {
-                    Authorization: `Bearer ${data.accessToken}`,
+                    Authorization: `Bearer ${accessToken}`,
                 },
             }),
-            providesTags: ['Cattle'],
+            providesTags: (result) =>
+                result
+                    ? [
+                          ...result.results.map(({ id }) => ({ type: "Cattle" as const, id })),
+                          "Cattle",
+                      ]
+                    : ["Cattle"],
             transformErrorResponse: (response: any) => ({
                 status: response.status,
                 message: getErrorMessage(response),
             }),
         }),
 
-        // Get pregnant cattle
         getPregnantCattle: builder.query<CattleResponse, { accessToken: string }>({
-            query: (data) => ({
-                url: 'core/cattle/pregnant/',
-                method: 'GET',
+            query: ({ accessToken }) => ({
+                url: "core/cattle/pregnant/",
+                method: "GET",
                 headers: {
-                    Authorization: `Bearer ${data.accessToken}`,
+                    Authorization: `Bearer ${accessToken}`,
                 },
             }),
-            providesTags: ['PregnantCattle'],
+            providesTags: (result) =>
+                result
+                    ? [
+                          ...result.results.map(({ id }) => ({ type: "PregnantCattle" as const, id })),
+                          "PregnantCattle",
+                      ]
+                    : ["PregnantCattle"],
         }),
 
-        // Get gestation data
         getGestationData: builder.query<GestationDataResponse, { accessToken: string }>({
-            query: (data) => ({
-                url: 'core/cattle/gestation-data/',
-                method: 'GET',
+            query: ({ accessToken }) => ({
+                url: "core/cattle/gestation-data/",
+                method: "GET",
                 headers: {
-                    Authorization: `Bearer ${data.accessToken}`,
+                    Authorization: `Bearer ${accessToken}`,
                 },
             }),
-            providesTags: ['GestationData'],
+            providesTags: (result) =>
+                result
+                    ? [
+                          ...result.results.map(({ cattle }) => ({ type: "GestationData" as const, id: cattle.id })),
+                          "GestationData",
+                      ]
+                    : ["GestationData"],
         }),
 
-        // Get single cattle by ID
-        getCattleById: builder.query<Cattle, { accessToken: string; id: string }>({
+        getCattleById: builder.query<Cattle, { accessToken: string; id: string | number }>({
             query: ({ accessToken, id }) => ({
                 url: `core/cattle/${id}/`,
-                method: 'GET',
+                method: "GET",
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
                 },
             }),
-            providesTags: (result, error, { id }) => [{ type: 'Cattle', id }],
+            providesTags: (result, error, { id }) => [{ type: "Cattle", id }],
             transformErrorResponse: (response: any) => ({
                 status: response.status,
                 message: getErrorMessage(response),
             }),
         }),
 
-        // Create new cattle
-        postCattle: builder.mutation<Cattle, {
-                accessToken: string;
-                breed?: string;
-                birth_date?: string;
-            gender: "male" | "female";
-            life_stage: "calf" | "heifer" | "cow" | "bull";
-                ear_tag_no: string;
-                dam_id?: string;
-                sire_id?: string;
-                is_purchased: boolean;
-            purchase_date?: string;
-            purchase_source?: string;
-            gestation_status: "not_pregnant" | "pregnant" | "calving";
-            health_status: "healthy" | "sick";
-            last_insemination_date?: string;
-            photo?: File;
-        }>({
-            query: (data) => {
-                const formData = new FormData();
-                Object.entries(data).forEach(([key, value]) => {
-                    if (key !== 'accessToken' && value !== undefined) {
-                        if (key.includes('date') && typeof value === 'string') {
-                            formData.append(key, formatDateForApi(value) || '');
-                        } else if (typeof value === 'boolean') {
-                            formData.append(key, value ? '1' : '0');
-                        } else if (value instanceof File) {
-                            formData.append(key, value);
-                        } else if (typeof value === 'string') {
-                            formData.append(key, value);
-                        }
-                    }
-                });
-
-                return {
-                    url: 'core/cattle/create/',
-                method: 'POST',
-                    headers: {
-                        Authorization: `Bearer ${data.accessToken}`,
-                    },
-                    body: formData,
-                };
-            },
-            invalidatesTags: ['Cattle', 'PregnantCattle', 'GestationData'],
-        }),
-
-        // Update cattle
-        updateCattle: builder.mutation<Cattle, {
-            accessToken: string;
-            id: string;
-            updates: Partial<Cattle>;
-        }>({
-            query: ({ accessToken, id, updates }) => ({
-                url: `core/cattle/${id}/update/`,
-                method: 'PUT',
+        postCattle: builder.mutation<Cattle, CattleCreateRequest>({
+            query: ({ accessToken, ...payload }) => ({
+                url: "core/cattle/create/",
+                method: "POST",
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json',
                 },
-                body: updates,
+                body: buildCattleFormData(payload),
             }),
-            invalidatesTags: ['Cattle', 'PregnantCattle', 'GestationData'],
+            invalidatesTags: ["Cattle", "PregnantCattle", "GestationData"],
         }),
 
-        // Delete cattle
-        deleteCattle: builder.mutation<void, { accessToken: string; id: string }>({
-            query: (data) => ({
-                url: `core/cattle/${data.id}/delete/`,
-                method: 'DELETE',
+        updateCattle: builder.mutation<Cattle, CattleUpdateRequest>({
+            query: ({ accessToken, id, ...updates }) => ({
+                url: `core/cattle/${id}/update/`,
+                method: "PUT",
                 headers: {
-                    Authorization: `Bearer ${data.accessToken}`,
+                    Authorization: `Bearer ${accessToken}`,
                 },
+                body: buildCattleFormData(updates),
             }),
-            invalidatesTags: ['Cattle', 'PregnantCattle', 'GestationData'],
+            invalidatesTags: (result, error, { id }) => [
+                { type: "Cattle", id },
+                "Cattle",
+                "PregnantCattle",
+                "GestationData",
+            ],
         }),
 
-        // Generate alerts for a specific cattle
-        generateCattleAlerts: builder.query<any, { accessToken: string; id: string }>({
-            query: (data) => ({
-                url: `core/cattle/${data.id}/alerts/`,
-                method: 'GET',
+        deleteCattle: builder.mutation<void, { accessToken: string; id: string | number }>({
+            query: ({ accessToken, id }) => ({
+                url: `core/cattle/${id}/delete/`,
+                method: "DELETE",
                 headers: {
-                    Authorization: `Bearer ${data.accessToken}`,
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            }),
+            invalidatesTags: (result, error, { id }) => [
+                { type: "Cattle", id },
+                "Cattle",
+                "PregnantCattle",
+                "GestationData",
+            ],
+        }),
+
+        generateCattleAlerts: builder.query<{ alerts: Alert[] }, { accessToken: string; id: string | number }>({
+            query: ({ accessToken, id }) => ({
+                url: `core/cattle/${id}/alerts/`,
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
                 },
             }),
         }),
@@ -348,38 +439,29 @@ export const cattleApi = createApi({
             providesTags: (result, error, { id }) => [{ type: 'BirthRecords', id }],
         }),
 
-        // Create birth record
         createBirthRecord: builder.mutation<BirthRecordResponse, {
-            accessToken: string;
-            cattle: number;
-            calving_date: string;
-            calving_outcome: 'successful' | 'complications' | 'stillborn' | 'died_shortly_after';
-            calf_count: number;
-            calf_gender: string;
-            calf_weight: string;
-            calf_ear_tag: string;
-            complications?: string;
-            veterinary_assistance: boolean;
-            notes?: string;
+            accessToken: string
+            cattle: number
+            calving_date: string
+            calving_outcome: 'successful' | 'complications' | 'stillborn' | 'died_shortly_after'
+            calf_count: number
+            calf_gender: string
+            calf_weight: string
+            calf_ear_tag: string
+            complications?: string
+            veterinary_assistance: boolean
+            notes?: string
         }>({
-            query: (data) => ({
+            query: ({ accessToken, calving_date, ...body }) => ({
                 url: 'core/birth-records/create/',
                 method: 'POST',
                 headers: {
-                    Authorization: `Bearer ${data.accessToken}`,
+                    Authorization: `Bearer ${accessToken}`,
                     'Content-Type': 'application/json',
                 },
                 body: {
-                    cattle: data.cattle,
-                    calving_date: formatDateForApi(data.calving_date),
-                    calving_outcome: data.calving_outcome,
-                    calf_count: data.calf_count,
-                    calf_gender: data.calf_gender,
-                    calf_weight: data.calf_weight,
-                    calf_ear_tag: data.calf_ear_tag,
-                    complications: data.complications,
-                    veterinary_assistance: data.veterinary_assistance,
-                    notes: data.notes,
+                    ...body,
+                    calving_date: formatDateForApi(calving_date),
                 },
             }),
             invalidatesTags: ['BirthRecords', 'Cattle', 'PregnantCattle'],
@@ -387,9 +469,9 @@ export const cattleApi = createApi({
 
         // Update birth record
         updateBirthRecord: builder.mutation<BirthRecord, {
-            accessToken: string;
-            id: number;
-            updates: Partial<BirthRecord>;
+            accessToken: string
+            id: number
+            updates: Partial<BirthRecord>
         }>({
             query: ({ accessToken, id, updates }) => ({
                 url: `core/birth-records/${id}/update/`,

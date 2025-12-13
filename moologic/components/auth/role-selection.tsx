@@ -24,8 +24,9 @@ export function RoleSelection() {
   const handleRoleSelection = async (role: string) => {
     setIsLoading(true);
   
-    const token = session?.user?.accessToken;
-    const user_id = session?.user?.id;
+    // Prefer tokens from session, fall back to localStorage for the initial-email flow
+    const token = session?.user?.accessToken || (typeof window !== "undefined" ? localStorage.getItem("accessToken") : null);
+    const user_id = session?.user?.id || (typeof window !== "undefined" ? localStorage.getItem("user_id") : null);
   
     if (!token || !user_id) {
       toast({
@@ -38,8 +39,9 @@ export function RoleSelection() {
     }
   
     try {
-      console.log("token" + token)
-      const response = await fetch("http://127.0.0.1:8000/auth/update-role/", {
+        console.log("token" + token)
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://127.0.0.1:8000"
+        const response = await fetch(`${baseUrl}/auth/update-role/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

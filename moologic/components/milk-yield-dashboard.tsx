@@ -9,7 +9,7 @@ import { MilkProductionStatsChart } from "@/components/milk-production-stats-cha
 import { TopCows } from "@/components/top-cows"
 import { LessPerformingTable } from "@/components/less-performing-table"
 import { DateRangePicker } from "@/components/date-range-picker"
-import { motion } from "framer-motion"
+ 
 import { useSession } from "next-auth/react"
 import { 
   useGetFarmProductionLast7DaysQuery,
@@ -255,33 +255,14 @@ export function MilkYieldDashboard() {
 
       <div className="space-y-6">
         <div className="flex flex-col gap-2">
-          <motion.h1
-            className="text-3xl font-bold tracking-tight"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            {t("Milk Yield Dashboard")}
-          </motion.h1>
-          <motion.p
-            className="text-muted-foreground"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            {t("Monitor and analyze milk production across your herd.")}
-          </motion.p>
+          <h1 className="text-3xl font-bold tracking-tight fade-in">{t("Milk Yield Dashboard")}</h1>
+          <p className="text-muted-foreground fade-in">{t("Monitor and analyze milk production across your herd.")}</p>
         </div>
 
-        <motion.div
-          className="flex justify-end gap-2"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
+        <div className="flex justify-end gap-2 fade-in">
           <DateRangePicker />
           {metrics && <MilkYieldReport data={prepareReportData()!} />}
-        </motion.div>
+        </div>
 
         {metrics && (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -362,12 +343,7 @@ export function MilkYieldDashboard() {
 
           <TabsContent value="overview" className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              <motion.div
-                className="lg:col-span-2"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-              >
+              <div className="lg:col-span-2 fade-in">
                 <Card>
                   <CardHeader>
                     <CardTitle>Production Overview</CardTitle>
@@ -384,12 +360,8 @@ export function MilkYieldDashboard() {
                     <MilkProductionChart data={chartData} />
                   </CardContent>
                 </Card>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-              >
+              </div>
+              <div className="fade-in">
                 <Card>
                   <CardHeader>
                     <CardTitle>Lactation Stages</CardTitle>
@@ -399,15 +371,11 @@ export function MilkYieldDashboard() {
                     <LactationDonutChart data={metrics?.lactationDistribution} />
                   </CardContent>
                 </Card>
-              </motion.div>
+              </div>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
-              >
+              <div className="fade-in">
                 <Card>
                   <CardHeader>
                     <CardTitle>Top Performing Cows</CardTitle>
@@ -417,12 +385,8 @@ export function MilkYieldDashboard() {
                     <TopCows data={topCows} />
                   </CardContent>
                 </Card>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.6 }}
-              >
+              </div>
+              <div className="fade-in">
                 <Card>
                   <CardHeader>
                     <CardTitle>Production Analysis</CardTitle>
@@ -435,12 +399,12 @@ export function MilkYieldDashboard() {
                     />
                   </CardContent>
                 </Card>
-              </motion.div>
+              </div>
             </div>
           </TabsContent>
 
           <TabsContent value="production" className="space-y-6">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <div className="fade-in">
               <Card>
                 <CardHeader>
                   <CardTitle>{t("Production Trends")}</CardTitle>
@@ -457,11 +421,11 @@ export function MilkYieldDashboard() {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </div>
           </TabsContent>
 
           <TabsContent value="animals" className="space-y-6">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <div className="fade-in">
               <div className="grid gap-6">
                 <Card>
                   <CardHeader>
@@ -477,11 +441,11 @@ export function MilkYieldDashboard() {
                   </CardContent>
                 </Card>
               </div>
-            </motion.div>
+            </div>
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <div className="fade-in">
               <Card>
                 <CardHeader>
                   <CardTitle>{t("Advanced Analytics")}</CardTitle>
@@ -498,7 +462,7 @@ export function MilkYieldDashboard() {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

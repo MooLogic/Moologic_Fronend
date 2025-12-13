@@ -1,7 +1,7 @@
 "use client"
 
 import { useTheme } from "@/components/providers/theme-provider"
-import { motion } from "framer-motion"
+// framer-motion removed — replaced with CSS-based spinner and fade-in
 import { useTranslation } from "@/components/providers/language-provider"
 
 export function LoadingScreen() {
@@ -14,27 +14,12 @@ export function LoadingScreen() {
     >
       <div className="flex flex-col items-center">
         <div className="relative w-24 h-24">
-          <motion.div
-            className={`absolute inset-0 rounded-full border-4 ${theme === "dark" ? "border-gray-800" : "border-indigo-100"}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          />
-          <motion.div
-            className={`absolute inset-0 rounded-full border-4 ${theme === "dark" ? "border-t-indigo-400" : "border-t-indigo-600"} border-r-transparent border-b-transparent border-l-transparent`}
-            initial={{ rotate: 0 }}
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+          <div className={`absolute inset-0 rounded-full border-4 ${theme === "dark" ? "border-gray-800" : "border-indigo-100"}`} />
+          <div
+            className={`absolute inset-0 rounded-full border-4 ${theme === "dark" ? "border-t-indigo-400" : "border-t-indigo-600"} border-r-transparent border-b-transparent border-l-transparent animate-spin`}
           />
         </div>
-        <motion.div
-          className={`mt-4 text-xl font-medium ${theme === "dark" ? "text-gray-300" : "text-gray-800"}`}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          {t("Loading...")}
-        </motion.div>
+        <div className={`mt-4 text-xl font-medium fade-in ${theme === "dark" ? "text-gray-300" : "text-gray-800"}`}>{t("Loading...")}</div>
       </div>
     </div>
   )

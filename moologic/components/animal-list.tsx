@@ -8,6 +8,7 @@ import { useSession } from "next-auth/react"
 import { useTranslation } from "@/components/providers/language-provider"
 import { differenceInMonths, format } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Card, CardContent } from "@/components/ui/card"
 
 // Interface for Cattle data
 interface Cattle {
@@ -51,7 +52,8 @@ export function AnimalList({ onSelectAnimal }: { onSelectAnimal: (animal: Cattle
   }
 
   return (
-    <div className="bg-white rounded-lg border">
+    <Card>
+      <CardContent>
       <div className="p-4 border-b grid grid-cols-2 gap-4">
         <Select value={lifeStageFilter} onValueChange={setLifeStageFilter}>
           <SelectTrigger>
@@ -111,6 +113,7 @@ export function AnimalList({ onSelectAnimal }: { onSelectAnimal: (animal: Cattle
           ))}
         </TableBody>
       </Table>
-    </div>
+      </CardContent>
+    </Card>
   )
 }

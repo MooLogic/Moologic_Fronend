@@ -20,32 +20,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-
-interface Cattle {
-  id: string
-  ear_tag_no: string
-  breed?: string
-  birth_date?: string
-  gender: "male" | "female"
-  life_stage: "calf" | "heifer" | "cow" | "bull"
-  dam_id?: string
-  sire_id?: string
-  is_purchased: boolean
-  purchase_date?: string
-  purchase_source?: string
-  gestation_status: "not_pregnant" | "pregnant" | "calving"
-  health_status: "healthy" | "sick"
-  last_insemination_date?: string
-  last_calving_date?: string
-  expected_calving_date?: string
-  expected_insemination_date?: string
-}
+import { Cattle } from "@/lib/service/cattleService"
 
 interface AllAnimalsProps {
   animals: Cattle[]
   showFilters?: boolean
   onEdit?: (cattle: Cattle) => void
-  onDelete?: (id: string) => void
+  onDelete?: (id: number) => void
   isLoading?: boolean
 }
 
@@ -67,9 +48,10 @@ export function AllAnimals({
   const filteredAnimals = useMemo(() => {
     return animals.filter((animal) => {
       // Search filter
+      const searchTermLower = searchTerm.toLowerCase()
       const searchMatch =
-        animal.ear_tag_no.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (animal.breed && animal.breed.toLowerCase().includes(searchTerm.toLowerCase()))
+        (animal.ear_tag_no || "").toLowerCase().includes(searchTermLower) ||
+        (animal.breed && animal.breed.toLowerCase().includes(searchTermLower))
 
       // Status filter
       const statusMatch =
@@ -90,7 +72,7 @@ export function AllAnimals({
     })
   }, [animals, searchTerm, statusFilter, genderFilter])
 
-  const handleViewDetails = (id: string) => {
+  const handleViewDetails = (id: number) => {
     if (!id) return;
     router.push(`/cattle/${id}/detail`);
   }
@@ -101,7 +83,7 @@ export function AllAnimals({
     }
   }
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id: number) => {
     setSelectedCattleId(id)
     setDeleteDialogOpen(true)
   }
@@ -126,6 +108,24 @@ export function AllAnimals({
         return (
           <Badge variant="outline" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">
             {t("Calving")}
+          </Badge>
+        )
+      case "in_oestrus":
+        return (
+          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
+            {t("In Oestrus")}
+          </Badge>
+        )
+      case "missed_oestrus":
+        return (
+          <Badge variant="outline" className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300">
+            {t("Missed Oestrus")}
+          </Badge>
+        )
+      case "dry_off":
+        return (
+          <Badge variant="outline" className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300">
+            {t("Dry Off")}
           </Badge>
         )
       case "not_pregnant":

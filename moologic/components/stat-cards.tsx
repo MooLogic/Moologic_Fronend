@@ -1,6 +1,6 @@
 "use client"
 
-import { motion } from "framer-motion"
+// framer-motion removed — use CSS utilities for subtle entrance and hover
 import { Box, Milk, Circle, Activity } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { useGetCattleDataQuery, useGetCattleByIdQuery, usePostCattleMutation } from "@/lib/service/cattleService"
@@ -58,13 +58,7 @@ export function StatCards() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
       {stats.map((stat, index) => (
-        <motion.div
-          key={index}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: stat.delay }}
-          whileHover={{ y: -5, transition: { duration: 0.2 } }}
-        >
+        <div key={index} className="fade-in hover-raise">
           <Card className="overflow-hidden">
             <CardContent className="p-6 flex items-start gap-4">
               <div className={`w-12 h-12 rounded-full ${stat.bgColor} flex items-center justify-center`}>
@@ -76,7 +70,7 @@ export function StatCards() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
       ))}
     </div>
   )

@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
+ 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -87,7 +87,7 @@ export function GovernmentDashboard() {
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+      <div className="fade-in">
         <div className="mb-6">
           <div className="flex justify-between items-center">
             <div>
@@ -239,7 +239,7 @@ export function GovernmentDashboard() {
             <ProductionTrends detailed={true} />
           </TabsContent>
         </Tabs>
-      </motion.div>
+      </div>
     </div>
   )
 }

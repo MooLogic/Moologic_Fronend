@@ -1,6 +1,6 @@
 "use client"
 
-import { motion } from "framer-motion"
+// framer-motion removed — using CSS-based entrance + hover styles
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useGetCattleDataQuery } from "@/lib/service/cattleService"
 import { useSession } from "next-auth/react"
@@ -43,19 +43,12 @@ export function AnimalTable() {
       </TableHeader>
       <TableBody>
         {animals.map((animal: Cattle, index: number) => (
-          <motion.tr
-            key={animal.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
-            className="border-b"
-            whileHover={{ backgroundColor: "rgba(249, 250, 251, 0.5)" }}
-          >
+          <tr key={animal.id} className={`border-b fade-in hover-raise`}>
             <TableCell className="py-3 text-sm">{animal.ear_tag_no}</TableCell>
             <TableCell className="py-3 text-sm">
               {animal.expected_calving_date ? format(new Date(animal.expected_calving_date), "MMM d, yyyy") : "-"}
             </TableCell>
-          </motion.tr>
+          </tr>
         ))}
       </TableBody>
     </Table>

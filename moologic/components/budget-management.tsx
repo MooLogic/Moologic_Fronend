@@ -16,7 +16,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { useTranslation } from "@/components/providers/language-provider"
 
@@ -236,7 +236,8 @@ export function BudgetManagement() {
       </div>
 
       {/* Budget Items Table */}
-      <div className="bg-white rounded-lg border overflow-hidden">
+      <Card>
+        <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
@@ -282,7 +283,8 @@ export function BudgetManagement() {
             })}
           </TableBody>
         </Table>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

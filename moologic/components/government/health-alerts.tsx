@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Eye, AlertTriangle, AlertCircle, Bug as Virus } from "lucide-react"
-import { motion } from "framer-motion"
+ 
 
 // Sample data for health alerts
 const healthAlertsData = [
@@ -108,7 +108,7 @@ export function HealthAlerts() {
 
   return (
     <div className="space-y-4">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+      <div className="fade-in">
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -169,7 +169,7 @@ export function HealthAlerts() {
             </Table>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
 
       {/* Alert Details Dialog */}
       <Dialog open={!!selectedAlert} onOpenChange={() => setSelectedAlert(null)}>
